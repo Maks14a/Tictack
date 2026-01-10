@@ -75,6 +75,9 @@
             margin-bottom: 12px;
             font-size: 1.2rem;
             color: #90e0ef;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .options {
@@ -105,6 +108,63 @@
             box-shadow: 0 0 15px rgba(0, 180, 216, 0.5);
         }
 
+        .option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #00b4d8;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
         .game-board {
             display: flex;
             flex-direction: column;
@@ -130,11 +190,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: 4rem;
+            font-weight: 900;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            position: relative;
+            user-select: none;
         }
 
         .cell:hover {
@@ -145,12 +207,29 @@
 
         .cell.x {
             color: #ff6b6b;
-            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.7);
+            font-size: 4.5rem;
         }
 
         .cell.o {
             color: #4dffea;
-            text-shadow: 0 0 10px rgba(77, 255, 234, 0.5);
+            text-shadow: 0 0 20px rgba(77, 255, 234, 0.7);
+            font-size: 4.5rem;
+        }
+
+        .cell.hint {
+            animation: hint-pulse 2s infinite;
+        }
+
+        @keyframes hint-pulse {
+            0%, 100% { 
+                background: rgba(0, 255, 136, 0.15);
+                box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            }
+            50% { 
+                background: rgba(0, 255, 136, 0.25);
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+            }
         }
 
         .controls {
@@ -158,6 +237,7 @@
             justify-content: center;
             gap: 20px;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
 
         button {
@@ -171,6 +251,10 @@
             font-weight: 600;
             transition: all 0.3s ease;
             min-width: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         button:hover {
@@ -183,6 +267,15 @@
             transform: translateY(-1px);
         }
 
+        button.secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            min-width: 140px;
+        }
+
+        button.secondary:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+        }
+
         .status {
             text-align: center;
             font-size: 1.4rem;
@@ -190,18 +283,43 @@
             padding: 10px;
             color: #90e0ef;
             font-weight: 600;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
         }
 
         .winning-cell {
             animation: pulse 1s infinite;
-            background: rgba(0, 255, 136, 0.1);
+            background: rgba(0, 255, 136, 0.15);
             border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
         }
 
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
+        }
+
+        .hint-info {
+            text-align: center;
+            color: #80ffdb;
+            font-size: 1rem;
+            margin-top: -15px;
+            min-height: 24px;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .setting-info {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+            margin-top: 8px;
+            font-style: italic;
         }
 
         @media (max-width: 768px) {
@@ -214,7 +332,11 @@
             }
             
             .cell {
-                font-size: 2rem;
+                font-size: 3rem;
+            }
+            
+            .cell.x, .cell.o {
+                font-size: 3.5rem;
             }
             
             h1 {
@@ -238,12 +360,36 @@
             }
             
             .cell {
-                font-size: 1.5rem;
+                font-size: 2.5rem;
+            }
+            
+            .cell.x, .cell.o {
+                font-size: 3rem;
             }
             
             .option {
                 padding: 6px 12px;
                 font-size: 0.9rem;
+            }
+            
+            button {
+                padding: 12px 24px;
+                font-size: 1rem;
+                min-width: auto;
+            }
+            
+            .status {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .cell {
+                font-size: 2rem;
+            }
+            
+            .cell.x, .cell.o {
+                font-size: 2.5rem;
             }
         }
     </style>
@@ -275,11 +421,44 @@
                     </div>
                     
                     <div class="setting">
+                        <h3>🤖 Сложность бота</h3>
+                        <div class="options" id="difficultyOptions">
+                            <div class="option selected" data-difficulty="easy">Легкий</div>
+                            <div class="option" data-difficulty="medium">Средний</div>
+                            <div class="option" data-difficulty="hard">Сложный</div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting">
                         <h3>👤 Первый ход</h3>
                         <div class="options" id="firstMoveOptions">
                             <div class="option selected" data-first="X">Крестик (Вы)</div>
                             <div class="option" data-first="O">Нолик (Бот)</div>
                         </div>
+                    </div>
+                    
+                    <div class="setting">
+                        <h3>⚡ Оптимизация хода</h3>
+                        <div class="toggle-switch">
+                            <span>Включить оптимизацию</span>
+                            <label class="switch">
+                                <input type="checkbox" id="optimizationToggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-info">Автоматически включается для полей 5×5</div>
+                    </div>
+                    
+                    <div class="setting">
+                        <h3>💡 Подсказки</h3>
+                        <div class="toggle-switch">
+                            <span>Показывать лучший ход</span>
+                            <label class="switch">
+                                <input type="checkbox" id="hintToggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="hint-info" id="hintInfo"></div>
                     </div>
                 </div>
             </div>
@@ -291,7 +470,8 @@
                 
                 <div class="controls">
                     <button id="startBtn">🎮 Начать игру</button>
-                    <button id="resetBtn">🔄 Сбросить игру</button>
+                    <button id="hintBtn" class="secondary">💡 Подсказка</button>
+                    <button id="resetBtn" class="secondary">🔄 Сбросить</button>
                 </div>
             </div>
         </div>
@@ -302,11 +482,16 @@
             constructor() {
                 this.boardSize = 3;
                 this.winLength = 3;
+                this.difficulty = 'hard';
                 this.firstMove = 'X';
                 this.currentPlayer = 'X';
                 this.board = [];
                 this.gameActive = false;
                 this.winningCells = [];
+                this.hintsEnabled = true;
+                this.optimizationEnabled = true;
+                this.currentHint = null;
+                this.hintTimeout = null;
                 
                 this.init();
             }
@@ -314,6 +499,7 @@
             init() {
                 this.setupEventListeners();
                 this.createBoard();
+                this.updateOptimizationToggle();
             }
             
             setupEventListeners() {
@@ -324,6 +510,8 @@
                         option.classList.add('selected');
                         this.boardSize = parseInt(option.dataset.size);
                         this.updateWinOptions();
+                        this.updateOptimizationToggle();
+                        this.clearHint();
                     });
                 });
                 
@@ -334,6 +522,17 @@
                         document.querySelectorAll('#winOptions .option').forEach(opt => opt.classList.remove('selected'));
                         option.classList.add('selected');
                         this.winLength = parseInt(option.dataset.win);
+                        this.clearHint();
+                    });
+                });
+                
+                // Выбор сложности
+                document.querySelectorAll('#difficultyOptions .option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('#difficultyOptions .option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        this.difficulty = option.dataset.difficulty;
+                        this.clearHint();
                     });
                 });
                 
@@ -343,11 +542,28 @@
                         document.querySelectorAll('#firstMoveOptions .option').forEach(opt => opt.classList.remove('selected'));
                         option.classList.add('selected');
                         this.firstMove = option.dataset.first;
+                        this.clearHint();
                     });
+                });
+                
+                // Переключатель оптимизации
+                document.getElementById('optimizationToggle').addEventListener('change', (e) => {
+                    this.optimizationEnabled = e.target.checked;
+                });
+                
+                // Переключатель подсказок
+                document.getElementById('hintToggle').addEventListener('change', (e) => {
+                    this.hintsEnabled = e.target.checked;
+                    if (!this.hintsEnabled) {
+                        this.clearHint();
+                    } else if (this.gameActive && this.currentPlayer === 'X') {
+                        this.showHint();
+                    }
                 });
                 
                 // Кнопки управления
                 document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+                document.getElementById('hintBtn').addEventListener('click', () => this.showHint());
                 document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
             }
             
@@ -357,12 +573,8 @@
                     const winValue = parseInt(option.dataset.win);
                     if (winValue > this.boardSize) {
                         option.classList.add('disabled');
-                        option.style.opacity = '0.5';
-                        option.style.cursor = 'not-allowed';
                     } else {
                         option.classList.remove('disabled');
-                        option.style.opacity = '1';
-                        option.style.cursor = 'pointer';
                     }
                 });
                 
@@ -371,15 +583,26 @@
                     .filter(opt => !opt.classList.contains('disabled'))
                     .map(opt => parseInt(opt.dataset.win));
                 
-                const maxWin = Math.max(...availableOptions);
-                this.winLength = maxWin;
-                
-                winOptions.forEach(option => {
-                    option.classList.remove('selected');
-                    if (parseInt(option.dataset.win) === maxWin) {
-                        option.classList.add('selected');
-                    }
-                });
+                if (availableOptions.length > 0) {
+                    const maxWin = Math.max(...availableOptions);
+                    this.winLength = maxWin;
+                    
+                    winOptions.forEach(option => {
+                        option.classList.remove('selected');
+                        if (parseInt(option.dataset.win) === maxWin) {
+                            option.classList.add('selected');
+                        }
+                    });
+                }
+            }
+            
+            updateOptimizationToggle() {
+                const optimizationToggle = document.getElementById('optimizationToggle');
+                // Автоматически включать для поля 5×5
+                if (this.boardSize === 5) {
+                    optimizationToggle.checked = true;
+                    this.optimizationEnabled = true;
+                }
             }
             
             createBoard() {
@@ -387,10 +610,16 @@
                 boardElement.style.gridTemplateColumns = `repeat(${this.boardSize}, 1fr)`;
                 boardElement.innerHTML = '';
                 
+                // Динамически устанавливаем размер шрифта в зависимости от размера поля
+                let fontSize = 4.5; // Для 3×3
+                if (this.boardSize === 4) fontSize = 3.5;
+                if (this.boardSize === 5) fontSize = 2.8;
+                
                 for (let i = 0; i < this.boardSize * this.boardSize; i++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     cell.dataset.index = i;
+                    cell.style.fontSize = `${fontSize}rem`;
                     cell.addEventListener('click', () => this.makeMove(i));
                     boardElement.appendChild(cell);
                 }
@@ -401,6 +630,7 @@
                 this.currentPlayer = this.firstMove;
                 this.gameActive = true;
                 this.winningCells = [];
+                this.currentHint = null;
                 this.createBoard();
                 
                 document.getElementById('status').textContent = 
@@ -408,13 +638,17 @@
                 
                 if (this.currentPlayer === 'O') {
                     setTimeout(() => this.botMove(), 500);
+                } else if (this.hintsEnabled) {
+                    setTimeout(() => this.showHint(), 300);
                 }
             }
             
             resetGame() {
                 this.gameActive = false;
                 this.winningCells = [];
+                this.currentHint = null;
                 document.getElementById('status').textContent = 'Игра сброшена. Нажмите "Начать игру"';
+                document.getElementById('hintInfo').textContent = '';
                 this.createBoard();
             }
             
@@ -422,6 +656,7 @@
                 if (!this.gameActive || this.board[index] !== '') return;
                 if (this.currentPlayer !== 'X') return;
                 
+                this.clearHint();
                 this.board[index] = 'X';
                 this.updateBoard();
                 
@@ -449,12 +684,18 @@
                 
                 let move;
                 
-                // Для маленьких досок используем полный перебор
-                if (this.boardSize <= 4) {
-                    move = this.minimax(this.board, 0, true, -Infinity, Infinity).index;
-                } else {
-                    // Для больших досок используем эвристику
-                    move = this.findBestMove();
+                switch(this.difficulty) {
+                    case 'easy':
+                        move = this.getEasyMove();
+                        break;
+                    case 'medium':
+                        move = this.getMediumMove();
+                        break;
+                    case 'hard':
+                        move = this.getHardMove();
+                        break;
+                    default:
+                        move = this.getHardMove();
                 }
                 
                 if (move !== -1 && this.board[move] === '') {
@@ -476,51 +717,37 @@
                     
                     this.currentPlayer = 'X';
                     document.getElementById('status').textContent = 'Ваш ход (Крестик)';
+                    
+                    if (this.hintsEnabled) {
+                        setTimeout(() => this.showHint(), 300);
+                    }
                 }
             }
             
-            minimax(board, depth, isMaximizing, alpha, beta) {
-                // Оценка конечных состояний
-                if (this.checkWin('O')) return { score: 100 - depth };
-                if (this.checkWin('X')) return { score: -100 + depth };
-                if (this.isBoardFull()) return { score: 0 };
-                
-                // Ограничение глубины для больших досок
-                if (depth > 6 && this.boardSize > 3) {
-                    return { score: this.evaluateBoard() };
-                }
-                
-                let bestScore = isMaximizing ? -Infinity : Infinity;
-                let bestMove = -1;
-                
-                for (let i = 0; i < board.length; i++) {
-                    if (board[i] === '') {
-                        board[i] = isMaximizing ? 'O' : 'X';
-                        let score = this.minimax(board, depth + 1, !isMaximizing, alpha, beta).score;
-                        board[i] = '';
-                        
-                        if (isMaximizing) {
-                            if (score > bestScore) {
-                                bestScore = score;
-                                bestMove = i;
-                            }
-                            alpha = Math.max(alpha, bestScore);
-                        } else {
-                            if (score < bestScore) {
-                                bestScore = score;
-                                bestMove = i;
-                            }
-                            beta = Math.min(beta, bestScore);
+            getEasyMove() {
+                // Сначала проверяем выигрышные ходы
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'O';
+                        if (this.checkWin('O')) {
+                            this.board[i] = '';
+                            return i;
                         }
-                        
-                        if (beta <= alpha) break;
+                        this.board[i] = '';
                     }
                 }
                 
-                return { score: bestScore, index: bestMove };
+                // Случайный ход
+                const availableMoves = this.board
+                    .map((cell, index) => cell === '' ? index : -1)
+                    .filter(index => index !== -1);
+                
+                return availableMoves.length > 0 
+                    ? availableMoves[Math.floor(Math.random() * availableMoves.length)] 
+                    : -1;
             }
             
-            findBestMove() {
+            getMediumMove() {
                 // Сначала проверяем выигрышные ходы
                 for (let i = 0; i < this.board.length; i++) {
                     if (this.board[i] === '') {
@@ -545,7 +772,505 @@
                     }
                 }
                 
-                // Эвристика: занимаем центр и углы
+                // Стратегические позиции
+                const center = Math.floor(this.board.length / 2);
+                if (this.board[center] === '') return center;
+                
+                // Эвристика: оценка позиций
+                let bestScore = -Infinity;
+                let bestMove = -1;
+                
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        let score = this.evaluatePosition(i, 'O');
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMove = i;
+                        }
+                    }
+                }
+                
+                return bestMove;
+            }
+            
+            getHardMove() {
+                // Определяем, использовать ли оптимизацию
+                const useOptimization = this.optimizationEnabled && (this.boardSize >= 5);
+                
+                if (useOptimization) {
+                    // Используем оптимизированный алгоритм для больших полей
+                    return this.getOptimizedMove();
+                } else {
+                    // Используем полный алгоритм с ограниченной глубиной
+                    return this.getFullMove();
+                }
+            }
+            
+            getFullMove() {
+                // Для полного алгоритма используем минимакс с разной глубиной в зависимости от размера поля
+                let depth;
+                if (this.boardSize === 3) depth = 9; // Полный перебор для 3×3
+                else if (this.boardSize === 4) depth = 4; // Глубина 4 для 4×4
+                else depth = 3; // Глубина 3 для 5×5 без оптимизации
+                
+                return this.minimax(this.board, 0, true, -Infinity, Infinity, depth).index;
+            }
+            
+            getOptimizedMove() {
+                // Оптимизированный алгоритм для больших полей
+                // Сначала проверяем выигрышные ходы
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'O';
+                        if (this.checkWin('O')) {
+                            this.board[i] = '';
+                            return i;
+                        }
+                        this.board[i] = '';
+                    }
+                }
+                
+                // Блокируем выигрышные ходы противника
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'X';
+                        if (this.checkWin('X')) {
+                            this.board[i] = '';
+                            return i;
+                        }
+                        this.board[i] = '';
+                    }
+                }
+                
+                // Используем минимакс с ограниченной глубиной и приоритетным поиском
+                return this.minimaxOptimized(this.board, 0, true, -Infinity, Infinity, 3).index;
+            }
+            
+            minimax(board, depth, isMaximizing, alpha, beta, maxDepth) {
+                if (this.checkWin('O')) return { score: 1000 - depth };
+                if (this.checkWin('X')) return { score: -1000 + depth };
+                if (this.isBoardFull() || depth >= maxDepth) return { score: this.evaluateBoard() };
+                
+                let bestScore = isMaximizing ? -Infinity : Infinity;
+                let bestMove = -1;
+                
+                // Получаем приоритетные ходы для оптимизации
+                const moves = this.getPriorityMoves(board);
+                
+                for (let i of moves) {
+                    if (board[i] === '') {
+                        board[i] = isMaximizing ? 'O' : 'X';
+                        let score = this.minimax(board, depth + 1, !isMaximizing, alpha, beta, maxDepth).score;
+                        board[i] = '';
+                        
+                        if (isMaximizing) {
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestMove = i;
+                            }
+                            alpha = Math.max(alpha, bestScore);
+                        } else {
+                            if (score < bestScore) {
+                                bestScore = score;
+                                bestMove = i;
+                            }
+                            beta = Math.min(beta, bestScore);
+                        }
+                        
+                        if (beta <= alpha) break;
+                    }
+                }
+                
+                return { score: bestScore, index: bestMove };
+            }
+            
+            minimaxOptimized(board, depth, isMaximizing, alpha, beta, maxDepth) {
+                if (this.checkWin('O')) return { score: 1000 - depth };
+                if (this.checkWin('X')) return { score: -1000 + depth };
+                if (this.isBoardFull() || depth >= maxDepth) return { score: this.evaluateBoardFast() };
+                
+                let bestScore = isMaximizing ? -Infinity : Infinity;
+                let bestMove = -1;
+                
+                // Быстрая оценка и сортировка ходов
+                const moves = this.getOptimizedMoves(board, isMaximizing ? 'O' : 'X');
+                
+                for (let i of moves) {
+                    if (board[i] === '') {
+                        board[i] = isMaximizing ? 'O' : 'X';
+                        let score = this.minimaxOptimized(board, depth + 1, !isMaximizing, alpha, beta, maxDepth).score;
+                        board[i] = '';
+                        
+                        if (isMaximizing) {
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestMove = i;
+                            }
+                            alpha = Math.max(alpha, bestScore);
+                        } else {
+                            if (score < bestScore) {
+                                bestScore = score;
+                                bestMove = i;
+                            }
+                            beta = Math.min(beta, bestScore);
+                        }
+                        
+                        if (beta <= alpha) break;
+                    }
+                }
+                
+                return { score: bestScore, index: bestMove };
+            }
+            
+            getOptimizedMoves(board, player) {
+                const moves = [];
+                const scores = [];
+                
+                // Оцениваем все возможные ходы
+                for (let i = 0; i < board.length; i++) {
+                    if (board[i] === '') {
+                        // Быстрая оценка хода
+                        let score = this.evaluateMoveFast(i, player);
+                        moves.push(i);
+                        scores.push(score);
+                    }
+                }
+                
+                // Сортируем ходы по убыванию оценки
+                moves.sort((a, b) => {
+                    const scoreA = scores[moves.indexOf(a)];
+                    const scoreB = scores[moves.indexOf(b)];
+                    return scoreB - scoreA;
+                });
+                
+                return moves;
+            }
+            
+            evaluateMoveFast(index, player) {
+                let score = 0;
+                
+                // Проверяем выигрышные возможности
+                this.board[index] = player;
+                if (this.checkWin(player)) score += 1000;
+                this.board[index] = '';
+                
+                // Проверяем блокировку
+                this.board[index] = player === 'O' ? 'X' : 'O';
+                if (this.checkWin(player === 'O' ? 'X' : 'O')) score += 500;
+                this.board[index] = '';
+                
+                // Центральные позиции
+                const center = Math.floor(this.board.length / 2);
+                if (index === center) score += 50;
+                
+                // Угловые позиции
+                const corners = [0, this.boardSize - 1, 
+                               this.boardSize * (this.boardSize - 1), 
+                               this.board.length - 1];
+                if (corners.includes(index)) score += 30;
+                
+                // Близость к другим своим символам
+                const adjacent = this.getAdjacentCells(index);
+                for (let adj of adjacent) {
+                    if (this.board[adj] === player) score += 20;
+                }
+                
+                return score;
+            }
+            
+            getAdjacentCells(index) {
+                const row = Math.floor(index / this.boardSize);
+                const col = index % this.boardSize;
+                const cells = [];
+                
+                for (let r = Math.max(0, row - 1); r <= Math.min(this.boardSize - 1, row + 1); r++) {
+                    for (let c = Math.max(0, col - 1); c <= Math.min(this.boardSize - 1, col + 1); c++) {
+                        if (r !== row || c !== col) {
+                            cells.push(r * this.boardSize + c);
+                        }
+                    }
+                }
+                
+                return cells;
+            }
+            
+            getPriorityMoves(board) {
+                const moves = [];
+                const center = Math.floor(board.length / 2);
+                const corners = [0, this.boardSize - 1, 
+                               this.boardSize * (this.boardSize - 1), 
+                               board.length - 1];
+                
+                // Центр
+                if (board[center] === '') moves.push(center);
+                
+                // Углы
+                for (let corner of corners) {
+                    if (board[corner] === '' && !moves.includes(corner)) moves.push(corner);
+                }
+                
+                // Остальные клетки
+                for (let i = 0; i < board.length; i++) {
+                    if (board[i] === '' && !moves.includes(i)) moves.push(i);
+                }
+                
+                return moves;
+            }
+            
+            evaluatePosition(index, player) {
+                let score = 0;
+                const lines = this.getLinesThroughCell(index);
+                
+                for (let line of lines) {
+                    let playerCount = 0;
+                    let opponentCount = 0;
+                    let emptyCount = 0;
+                    
+                    for (let cellIndex of line) {
+                        if (this.board[cellIndex] === player) playerCount++;
+                        else if (this.board[cellIndex] === (player === 'X' ? 'O' : 'X')) opponentCount++;
+                        else emptyCount++;
+                    }
+                    
+                    if (playerCount === this.winLength - 1 && emptyCount === 1) score += 100;
+                    else if (opponentCount === this.winLength - 1 && emptyCount === 1) score += 50;
+                    else if (playerCount > 0 && opponentCount === 0) score += playerCount * 10;
+                    else if (opponentCount > 0 && playerCount === 0) score += opponentCount * 5;
+                }
+                
+                // Бонус за центр
+                const center = Math.floor(this.board.length / 2);
+                if (index === center) score += 20;
+                
+                // Бонус за углы
+                const corners = [0, this.boardSize - 1, 
+                               this.boardSize * (this.boardSize - 1), 
+                               this.board.length - 1];
+                if (corners.includes(index)) score += 10;
+                
+                return score;
+            }
+            
+            evaluateBoard() {
+                let score = 0;
+                const lines = this.getAllLines();
+                
+                for (let line of lines) {
+                    let playerCount = 0;
+                    let opponentCount = 0;
+                    let emptyCount = 0;
+                    
+                    for (let index of line) {
+                        if (this.board[index] === 'O') playerCount++;
+                        else if (this.board[index] === 'X') opponentCount++;
+                        else emptyCount++;
+                    }
+                    
+                    if (playerCount === this.winLength) return 1000;
+                    if (opponentCount === this.winLength) return -1000;
+                    
+                    if (playerCount > 0 && opponentCount === 0) {
+                        score += Math.pow(10, playerCount);
+                    } else if (opponentCount > 0 && playerCount === 0) {
+                        score -= Math.pow(10, opponentCount);
+                    }
+                }
+                
+                return score;
+            }
+            
+            evaluateBoardFast() {
+                // Упрощённая быстрая оценка для оптимизированного алгоритма
+                let score = 0;
+                
+                // Проверяем только опасные линии
+                const dangerousLines = this.getDangerousLines();
+                
+                for (let line of dangerousLines) {
+                    let playerCount = 0;
+                    let opponentCount = 0;
+                    
+                    for (let index of line) {
+                        if (this.board[index] === 'O') playerCount++;
+                        else if (this.board[index] === 'X') opponentCount++;
+                    }
+                    
+                    if (playerCount > 0 && opponentCount === 0) {
+                        score += playerCount * 5;
+                    } else if (opponentCount > 0 && playerCount === 0) {
+                        score -= opponentCount * 5;
+                    }
+                }
+                
+                return score;
+            }
+            
+            getDangerousLines() {
+                // Возвращает только линии, которые близки к завершению
+                const allLines = this.getAllLines();
+                const dangerousLines = [];
+                
+                for (let line of allLines) {
+                    let playerCount = 0;
+                    let opponentCount = 0;
+                    let emptyCount = 0;
+                    
+                    for (let index of line) {
+                        if (this.board[index] === 'O') playerCount++;
+                        else if (this.board[index] === 'X') opponentCount++;
+                        else emptyCount++;
+                    }
+                    
+                    // Линия считается опасной, если в ней не менее winLength-1 символов одного игрока
+                    if (playerCount >= this.winLength - 1 || opponentCount >= this.winLength - 1) {
+                        dangerousLines.push(line);
+                    }
+                }
+                
+                return dangerousLines;
+            }
+            
+            showHint() {
+                if (!this.gameActive || this.currentPlayer !== 'X' || !this.hintsEnabled) return;
+                
+                this.clearHint();
+                
+                // Вычисляем лучший ход для игрока
+                let hintIndex;
+                
+                switch(this.difficulty) {
+                    case 'easy':
+                        hintIndex = this.getSimpleHint();
+                        break;
+                    case 'medium':
+                    case 'hard':
+                        // Используем упрощённый алгоритм для подсказок
+                        hintIndex = this.getHintMove();
+                        break;
+                    default:
+                        hintIndex = -1;
+                }
+                
+                if (hintIndex !== -1 && this.board[hintIndex] === '') {
+                    this.currentHint = hintIndex;
+                    
+                    const cells = document.querySelectorAll('.cell');
+                    cells[hintIndex].classList.add('hint');
+                    
+                    // Показываем информацию о подсказке
+                    let reason = "Стратегическая позиция";
+                    
+                    // Проверяем, почему это хороший ход
+                    this.board[hintIndex] = 'X';
+                    if (this.checkWin('X')) {
+                        reason = "Выигрышный ход!";
+                    } else {
+                        this.board[hintIndex] = 'O';
+                        if (this.checkWin('O')) {
+                            reason = "Блокировка выигрыша бота";
+                        }
+                    }
+                    this.board[hintIndex] = '';
+                    
+                    document.getElementById('hintInfo').textContent = `Лучший ход: ${reason}`;
+                    
+                    // Автоматически убираем подсказку через 5 секунд
+                    this.hintTimeout = setTimeout(() => this.clearHint(), 5000);
+                }
+            }
+            
+            getHintMove() {
+                // Быстрый алгоритм для подсказок
+                
+                // Проверяем выигрышные ходы
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'X';
+                        if (this.checkWin('X')) {
+                            this.board[i] = '';
+                            return i;
+                        }
+                        this.board[i] = '';
+                    }
+                }
+                
+                // Блокируем выигрыш бота
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'O';
+                        if (this.checkWin('O')) {
+                            this.board[i] = '';
+                            return i;
+                        }
+                        this.board[i] = '';
+                    }
+                }
+                
+                // Эвристическая оценка
+                let bestScore = -Infinity;
+                let bestMove = -1;
+                
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        let score = this.evaluateHintPosition(i);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMove = i;
+                        }
+                    }
+                }
+                
+                return bestMove;
+            }
+            
+            evaluateHintPosition(index) {
+                let score = 0;
+                
+                // Центральные позиции
+                const center = Math.floor(this.board.length / 2);
+                if (index === center) score += 100;
+                
+                // Угловые позиции
+                const corners = [0, this.boardSize - 1, 
+                               this.boardSize * (this.boardSize - 1), 
+                               this.board.length - 1];
+                if (corners.includes(index)) score += 50;
+                
+                // Близость к своим символам
+                const adjacent = this.getAdjacentCells(index);
+                for (let adj of adjacent) {
+                    if (this.board[adj] === 'X') score += 20;
+                }
+                
+                return score;
+            }
+            
+            getSimpleHint() {
+                // Проверяем выигрышные ходы
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'X';
+                        if (this.checkWin('X')) {
+                            this.board[i] = '';
+                            return i;
+                        }
+                        this.board[i] = '';
+                    }
+                }
+                
+                // Блокируем выигрыш бота
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'O';
+                        if (this.checkWin('O')) {
+                            this.board[i] = '';
+                            return i;
+                        }
+                        this.board[i] = '';
+                    }
+                }
+                
+                // Центр или углы
                 const center = Math.floor(this.board.length / 2);
                 if (this.board[center] === '') return center;
                 
@@ -556,32 +1281,42 @@
                     if (this.board[corner] === '') return corner;
                 }
                 
-                // Случайный ход
-                const availableMoves = this.board
-                    .map((cell, index) => cell === '' ? index : -1)
-                    .filter(index => index !== -1);
+                // Любая свободная клетка
+                for (let i = 0; i < this.board.length; i++) {
+                    if (this.board[i] === '') return i;
+                }
                 
-                return availableMoves[Math.floor(Math.random() * availableMoves.length)] || -1;
+                return -1;
             }
             
-            evaluateBoard() {
-                let score = 0;
+            clearHint() {
+                if (this.hintTimeout) {
+                    clearTimeout(this.hintTimeout);
+                    this.hintTimeout = null;
+                }
                 
-                // Оцениваем все возможные линии
-                const lines = this.getAllLines();
+                if (this.currentHint !== null) {
+                    const cells = document.querySelectorAll('.cell');
+                    cells[this.currentHint]?.classList.remove('hint');
+                    this.currentHint = null;
+                    document.getElementById('hintInfo').textContent = '';
+                }
+            }
+            
+            getLinesThroughCell(index) {
+                const lines = [];
+                const row = Math.floor(index / this.boardSize);
+                const col = index % this.boardSize;
                 
-                for (let line of lines) {
-                    const oCount = line.filter(i => this.board[i] === 'O').length;
-                    const xCount = line.filter(i => this.board[i] === 'X').length;
-                    
-                    if (oCount > 0 && xCount === 0) {
-                        score += Math.pow(10, oCount);
-                    } else if (xCount > 0 && oCount === 0) {
-                        score -= Math.pow(10, xCount);
+                // Все возможные линии через клетку
+                const allLines = this.getAllLines();
+                for (let line of allLines) {
+                    if (line.includes(index)) {
+                        lines.push(line);
                     }
                 }
                 
-                return score;
+                return lines;
             }
             
             getAllLines() {
@@ -656,8 +1391,16 @@
                 cells.forEach((cell, index) => {
                     cell.textContent = this.board[index];
                     cell.className = 'cell';
-                    if (this.board[index] === 'X') cell.classList.add('x');
-                    if (this.board[index] === 'O') cell.classList.add('o');
+                    if (this.board[index] === 'X') {
+                        cell.classList.add('x');
+                        cell.style.fontSize = this.boardSize === 3 ? '4.5rem' : 
+                                             this.boardSize === 4 ? '3.5rem' : '2.8rem';
+                    }
+                    if (this.board[index] === 'O') {
+                        cell.classList.add('o');
+                        cell.style.fontSize = this.boardSize === 3 ? '4.5rem' : 
+                                             this.boardSize === 4 ? '3.5rem' : '2.8rem';
+                    }
                     if (this.winningCells.includes(index)) {
                         cell.classList.add('winning-cell');
                     }
@@ -680,4 +1423,4 @@
         });
     </script>
 </body>
-</html>
+                            </html>
