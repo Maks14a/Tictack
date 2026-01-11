@@ -249,35 +249,24 @@
     function initGame() {
         session.active = true;
         session.board = Array(settings.size * settings.size).fill(null);
-        session.turn = 'X'; // Всегда начинаем с X по правилам
-        session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
-        session.winLines = generateLines(settings.size, settings.win);
         
+        // КЛЮЧЕВОЙ ФИКС: 
+        // Если выбран старт "Игрок" (p), то первым ходит знак игрока (settings.playerSide)
+        // Если выбран старт "Бот" (b), то первым ходит знак бота (session.botSide)
+        session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
+        session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
+        
+        session.winLines = generateLines(settings.size, settings.win);
         document.getElementById('menu').classList.add('hidden');
         render();
-        
-        // ФИКС: Проверяем, чей сейчас ход (бота или игрока)
         checkTurn();
     }
 
     function checkTurn() {
         if (!session.active) return;
 
-        // Если текущий символ (X или O) принадлежит боту — он ходит
         if (session.turn === session.botSide) {
             setStatus("БОТ ДУМАЕТ (" + session.botSide + ")...");
-            document.getElementById('board').classList.add('locked');
-            setTimeout(botMove, 600);
-        } else {
-            setStatus("ТВОЙ ХОД (" + settings.playerSide + ")");
-            document.getElementById('board').classList.remove('locked');
-        }
-    }
-
-    function checkTurn() {
-        if (!session.active) return;
-        if (session.turn === session.botSide) {
-            setStatus("БОТ ДУМАЕТ...");
             document.getElementById('board').classList.add('locked');
             setTimeout(botMove, 600);
         } else {
