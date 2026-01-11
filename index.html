@@ -269,31 +269,39 @@ function initGame() {
 }
 
 function undoMove() {
-    clearTimeout(botTimer); // КЛЮЧЕВОЙ МОМЕНТ: останавливаем бота, если он "думал"
+    clearTimeout(botTimer); // Останавливаем мысли бота
     
     if (session.history.length === 0) return;
 
-    // Если сейчас ход бота — значит мы просто удаляем 1 последний ход игрока
-    // Если сейчас ход игрока — значит бот уже сходил, удаляем 2 хода (его и наш)
-    let count = (session.turn !== settings.playerSide) ? 1 : 2;
-    
-    if (session.history.length < 2 && session.turn === settings.playerSide) {
-        // Если в истории всего 1 ход (игрок сходил первым), удаляем только его
-        count = 1; 
-    }
+    // Определяем, сколько символов стирать.
+    // Если последний ход в истории сделал БОТ, значит стираем 2 хода (бота и твой).
+    // Если последний ход сделал ТЫ (и бот еще не ответил), стираем только 1 твой ход.
+    const lastIdx = session.history[session.history.length - 1];
+    const lastSymbol = session.board[lastIdx];
+    let count = (lastSymbol === session.botSide) ? 2 : 1;
 
     for(let i = 0; i < count; i++) {
         if (session.history.length > 0) {
-            let lastIdx = session.history.pop();
-            session.board[lastIdx] = null;
-            session.turn = (session.turn === 'X') ? 'O' : 'X';
+            let idx = session.history.pop();
+            session.board[idx] = null;
+            // Возвращаем очередь хода тому, чей символ мы только что стерли
+            session.turn = (session.board.filter(x => x).length % 2 === 0) 
+                ? (settings.start === 'p' ? settings.playerSide : session.botSide)
+                : (settings.start === 'p' ? session.botSide : settings.playerSide);
         }
     }
 
-    session.active = true;
+    // ВАЖНО: После отката игра всегда снова активна (снимаем блокировку победы)
+    session.active = true; 
     render();
+    
+    // Специально для отката: принудительно пересчитываем turn на основе количества знаков на поле
+    const xCount = session.board.filter(s => s === 'X').length;
+    const oCount = session.board.filter(s => s === 'O').length;
+    session.turn = (xCount === oCount) ? 'X' : 'O';
+
     checkTurn();
-}
+    }
 
 function checkTurn() {
     if (!session.active) return;
