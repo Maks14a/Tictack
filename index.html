@@ -216,16 +216,20 @@
     </div>
 </div>
 
+
 <script>
     let settings = { size: 3, win: 3, diff: 'god', pro: false, playerSide: 'X', start: 'p' };
     let session = { board: [], active: false, turn: 'X', botSide: 'O', winLines: [], history: [] };
+    let botTimer;
+    
+    // Память бота для PRO режима
+    let transpositionTable = new Map();
 
     function customSettings() {
         let n = prompt("Размер поля (N):", settings.size); if(!n) return;
         let w = prompt("Условие победы:", settings.win); if(!w) return;
         settings.size = parseInt(n); settings.win = parseInt(w);
-        document.querySelectorAll('#set-size .opt-btn, #set-win .opt-btn').forEach(b => b.classList.remove('active'));
-        drawEmpty(); setStatus(`РЕЖИМ: ${n}x${n} (${w})`);
+        drawEmpty(); setStatus(`РЕЖИМ: ${n}x${n} (${w} в ряд)`);
     }
 
     function config(key, val, el) {
@@ -252,70 +256,19 @@
         }
     }
 
-    // Добавь эту переменную в начало секции <script> к остальным
-let botTimer; 
-
-function initGame() {
-    clearTimeout(botTimer); // Очищаем старые таймеры при перезапуске
-    session.active = true;
-    session.history = [];
-    session.board = Array(settings.size * settings.size).fill(null);
-    session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
-    session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
-    session.winLines = generateLines(settings.size, settings.win);
-    document.getElementById('menu').classList.add('hidden');
-    render();
-    checkTurn();
-}
-
-function undoMove() {
-    clearTimeout(botTimer); // Останавливаем мысли бота
-    
-    if (session.history.length === 0) return;
-
-    // Определяем, сколько символов стирать.
-    // Если последний ход в истории сделал БОТ, значит стираем 2 хода (бота и твой).
-    // Если последний ход сделал ТЫ (и бот еще не ответил), стираем только 1 твой ход.
-    const lastIdx = session.history[session.history.length - 1];
-    const lastSymbol = session.board[lastIdx];
-    let count = (lastSymbol === session.botSide) ? 2 : 1;
-
-    for(let i = 0; i < count; i++) {
-        if (session.history.length > 0) {
-            let idx = session.history.pop();
-            session.board[idx] = null;
-            // Возвращаем очередь хода тому, чей символ мы только что стерли
-            session.turn = (session.board.filter(x => x).length % 2 === 0) 
-                ? (settings.start === 'p' ? settings.playerSide : session.botSide)
-                : (settings.start === 'p' ? session.botSide : settings.playerSide);
-        }
+    function initGame() {
+        clearTimeout(botTimer);
+        transpositionTable.clear();
+        session.active = true;
+        session.history = [];
+        session.board = Array(settings.size * settings.size).fill(null);
+        session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
+        session.turn = 'X'; 
+        session.winLines = generateLines(settings.size, settings.win);
+        document.getElementById('menu').classList.add('hidden');
+        render();
+        checkTurn();
     }
-
-    // ВАЖНО: После отката игра всегда снова активна (снимаем блокировку победы)
-    session.active = true; 
-    render();
-    
-    // Специально для отката: принудительно пересчитываем turn на основе количества знаков на поле
-    const xCount = session.board.filter(s => s === 'X').length;
-    const oCount = session.board.filter(s => s === 'O').length;
-    session.turn = (xCount === oCount) ? 'X' : 'O';
-
-    checkTurn();
-    }
-
-function checkTurn() {
-    if (!session.active) return;
-    if (session.turn === session.botSide) {
-        setStatus("БОТ ДУМАЕТ...");
-        document.getElementById('board').classList.add('locked');
-        // Сохраняем ссылку на таймер
-        botTimer = setTimeout(botMove, 600); 
-    } else {
-        setStatus("ТВОЙ ХОД (" + session.turn + ")");
-        document.getElementById('board').classList.remove('locked');
-    }
-}
-
 
     function render() {
         const b = document.getElementById('board');
@@ -324,7 +277,7 @@ function checkTurn() {
             const c = document.createElement('div');
             c.className = 'cell' + (val ? ' ' + val.toLowerCase() : '');
             c.innerHTML = `<span>${val || ''}</span>`;
-            c.onclick = () => { if(session.active && !session.board[i]) doMove(i, session.turn); };
+            c.onclick = () => { if(session.active && !session.board[i] && session.turn === settings.playerSide) doMove(i, session.turn); };
             b.appendChild(c);
         });
     }
@@ -345,83 +298,127 @@ function checkTurn() {
         checkTurn();
     }
 
+    function checkTurn() {
+        if (!session.active) return;
+        if (session.turn === session.botSide) {
+            setStatus("БОТ ДУМАЕТ...");
+            document.getElementById('board').classList.add('locked');
+            botTimer = setTimeout(botMove, 300);
+        } else {
+            setStatus("ТВОЙ ХОД (" + session.turn + ")");
+            document.getElementById('board').classList.remove('locked');
+        }
+    }
+
     function botMove() {
         if (!session.active) return;
-        let idx = (settings.diff === 'god') ? findGodMove() : findBestLogic();
-        if (settings.diff === 'easy' && Math.random() < 0.7) idx = randomEmpty();
+        let idx;
+        if (settings.diff === 'god') {
+            // Для 3х3 - полный просчет, для 5х5 - глубина 6, если PRO - глубина 8
+            let depth = settings.size === 3 ? 10 : (settings.pro ? 8 : 6);
+            idx = minimax(session.board, 0, true, -Infinity, Infinity, depth).index;
+        } else if (settings.diff === 'norm') {
+            idx = minimax(session.board, 0, true, -Infinity, Infinity, 2).index;
+        } else {
+            idx = randomEmpty();
+        }
         if (idx !== null) doMove(idx, session.turn);
     }
 
-    function findBestLogic() {
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = session.turn;
-                if(checkWin(b, session.turn)) return i;
+    function evaluate(board, depth) {
+        let score = 0;
+        for (let line of session.winLines) {
+            let b = 0, p = 0;
+            for (let idx of line) {
+                if (board[idx] === session.botSide) b++;
+                else if (board[idx] === settings.playerSide) p++;
             }
+            if (b > 0 && p > 0) continue;
+            if (b > 0) score += Math.pow(10, b);
+            if (p > 0) score -= Math.pow(10, p + 0.5); // Игрок чуть опаснее, бот должен мешать
         }
-        let opp = (session.turn === 'X') ? 'O' : 'X';
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = opp;
-                if(checkWin(b, opp)) return i;
-            }
-        }
-        return randomEmpty();
+        return score;
     }
 
-    function findGodMove() {
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = session.turn;
-                if(checkWin(b, session.turn)) return i;
-            }
-        }
-        let opp = (session.turn === 'X') ? 'O' : 'X';
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = opp;
-                if(checkWin(b, opp)) return i;
-            }
-        }
-        if (settings.size === 3) return minimax(session.board, 0, true, -Infinity, Infinity).index;
-        let weights = Array(session.board.length).fill(0);
-        session.winLines.forEach(line => {
-            let me = line.filter(idx => session.board[idx] === session.turn).length;
-            let op = line.filter(idx => session.board[idx] === opp).length;
-            if (me > 0 && op > 0) return;
-            line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + me + op * 1.1); });
-        });
-        let maxW = -1, best = [];
-        weights.forEach((w, i) => {
-            if (!session.board[i] && w > maxW) { maxW = w; best = [i]; }
-            else if (!session.board[i] && w === maxW) best.push(i);
-        });
-        return best.length ? best[Math.floor(Math.random() * best.length)] : randomEmpty();
-    }
-
-    function minimax(board, depth, isMax, alpha, beta) {
-        const avail = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-        const botS = session.turn; const plS = (botS === 'X') ? 'O' : 'X';
-        if (checkWin(board, plS)) return { score: -10 + depth };
-        if (checkWin(board, botS)) return { score: 10 - depth };
-        if (avail.length === 0) return { score: 0 };
+    function getMoves(board) {
         let moves = [];
-        for (let i = 0; i < avail.length; i++) {
-            let move = { index: avail[i] };
-            board[avail[i]] = isMax ? botS : plS;
-            let res = minimax(board, depth + 1, !isMax, alpha, beta);
-            move.score = res.score; board[avail[i]] = null;
-            moves.push(move);
-            if (isMax) { alpha = Math.max(alpha, move.score); if (beta <= alpha) break; }
-            else { beta = Math.min(beta, move.score); if (beta <= alpha) break; }
+        for (let i = 0; i < board.length; i++) {
+            if (!board[i]) {
+                // Стратегия: смотрим только клетки рядом с уже занятыми (радиус 1-2)
+                let near = false;
+                for (let j = 0; j < board.length; j++) {
+                    if (board[j]) {
+                        let r1 = Math.floor(i/settings.size), c1 = i%settings.size;
+                        let r2 = Math.floor(j/settings.size), c2 = j%settings.size;
+                        if (Math.abs(r1-r2) <= 1 && Math.abs(c1-c2) <= 1) { near = true; break; }
+                    }
+                }
+                if (near || board.filter(x => x).length === 0) moves.push(i);
+            }
         }
-        let bestIdx = 0;
-        if (isMax) {
-            let bs = -Infinity; for (let i=0; i<moves.length; i++) { if(moves[i].score > bs) { bs=moves[i].score; bestIdx=i; } }
-        } else {
-            let bs = Infinity; for (let i=0; i<moves.length; i++) { if(moves[i].score < bs) { bs=moves[i].score; bestIdx=i; } }
+        return moves.length ? moves : [Math.floor(board.length/2)];
+    }
+
+    function minimax(board, depth, isMax, alpha, beta, maxD) {
+        let boardKey = board.join('') + isMax;
+        if (settings.pro && transpositionTable.has(boardKey)) return transpositionTable.get(boardKey);
+
+        if (checkWin(board, session.botSide)) return { score: 1000000 - depth };
+        if (checkWin(board, settings.playerSide)) return { score: -1000000 + depth };
+        if (!board.includes(null) || depth >= maxD) return { score: evaluate(board, depth) };
+
+        let moves = getMoves(board);
+        let best = { score: isMax ? -Infinity : Infinity, index: moves[0] };
+
+        for (let i of moves) {
+            board[i] = isMax ? session.botSide : settings.playerSide;
+            let res = minimax(board, depth + 1, !isMax, alpha, beta, maxD);
+            board[i] = null;
+
+            if (isMax) {
+                if (res.score > best.score) { best.score = res.score; best.index = i; }
+                alpha = Math.max(alpha, best.score);
+            } else {
+                if (res.score < best.score) { best.score = res.score; best.index = i; }
+                beta = Math.min(beta, best.score);
+            }
+            if (beta <= alpha) break;
         }
-        return moves[bestIdx];
+        
+        if (settings.pro) transpositionTable.set(boardKey, best);
+        return best;
+    }
+
+    function checkWin(b, sym) {
+        for (let line of session.winLines) {
+            if (line.every(i => b[i] === sym)) return line;
+        }
+        return null;
+    }
+
+    function generateLines(s, w) {
+        let lines = [];
+        for (let r = 0; r < s; r++) { 
+            for (let c = 0; c <= s - w; c++) { 
+                let l = []; for (let k = 0; k < w; k++) l.push(r * s + (c + k)); lines.push(l); 
+            } 
+        }
+        for (let c = 0; c < s; c++) { 
+            for (let r = 0; r <= s - w; r++) { 
+                let l = []; for (let k = 0; k < w; k++) l.push((r + k) * s + c); lines.push(l); 
+            } 
+        }
+        for (let r = 0; r <= s - w; r++) { 
+            for (let c = 0; c <= s - w; c++) { 
+                let l1 = [], l2 = []; 
+                for (let k = 0; k < w; k++) { 
+                    l1.push((r + k) * s + (c + k)); 
+                    l2.push((r + k) * s + (c + w - 1 - k)); 
+                } 
+                lines.push(l1); lines.push(l2); 
+            } 
+        }
+        return lines;
     }
 
     function randomEmpty() {
@@ -429,24 +426,32 @@ function checkTurn() {
         return empty.length ? empty[Math.floor(Math.random() * empty.length)] : null;
     }
 
+    function undoMove() {
+        clearTimeout(botTimer);
+        for(let i=0; i<2; i++) {
+            if (session.history.length > 0) {
+                let idx = session.history.pop();
+                session.board[idx] = null;
+            }
+        }
+        session.active = true;
+        session.turn = settings.playerSide;
+        render();
+        setStatus("ОТКАТ ХОДА");
+    }
+
     function getHint() {
         if (!session.active) return;
-        const idx = findGodMove(); if(idx === null) return;
-        const cell = document.getElementById('board').children[idx];
+        const move = minimax(session.board, 0, true, -Infinity, Infinity, 5);
+        const cell = document.getElementById('board').children[move.index];
         cell.classList.add('hint'); setTimeout(() => cell.classList.remove('hint'), 800);
     }
 
-    function generateLines(s, w) {
-        let lines = [];
-        for (let r = 0; r < s; r++) { for (let c = 0; c <= s - w; c++) { let l = []; for (let k = 0; k < w; k++) l.push(r * s + (c + k)); lines.push(l); } }
-        for (let c = 0; c < s; c++) { for (let r = 0; r <= s - w; r++) { let l = []; for (let k = 0; k < w; k++) l.push((r + k) * s + c); lines.push(l); } }
-        for (let r = 0; r <= s - w; r++) { for (let c = 0; c <= s - w; c++) { let l1 = [], l2 = []; for (let k = 0; k < w; k++) { l1.push((r + k) * s + (c + k)); l2.push((r + k) * s + (c + w - 1 - k)); } lines.push(l1); lines.push(l2); } }
-        return lines;
-    }
-
-    function checkWin(b, sym) { for (let line of session.winLines) { if (line.every(i => b[i] === sym)) return line; } return null; }
     function setStatus(t) { document.getElementById('status').innerText = t; }
     drawEmpty();
 </script>
+
+
+    
 </body>
 </html>
