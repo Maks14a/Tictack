@@ -175,6 +175,13 @@
             </div>
         </div>
         <div class="row">
+            <span class="row-label">РЕЖИМ</span>
+            <div class="group" id="set-pro">
+                <button class="opt-btn active" onclick="config('pro', false, this)">ВЫКЛ</button>
+                <button class="opt-btn" onclick="config('pro', true, this)">PRO</button>
+            </div>
+        </div>
+        <div class="row">
             <span class="row-label">Я ИГРАЮ ЗА</span>
             <div class="group" id="set-side">
                 <button class="opt-btn active" onclick="config('playerSide', 'X', this)">X</button>
@@ -202,7 +209,7 @@
 </div>
 
 <script>
-    let settings = { size: 3, win: 3, diff: 'god', playerSide: 'X', start: 'p' };
+    let settings = { size: 3, win: 3, diff: 'god', pro: false, playerSide: 'X', start: 'p' };
     let session = { board: [], active: false, turn: 'X', botSide: 'O', winLines: [] };
 
     function config(key, val, el) {
@@ -249,13 +256,8 @@
     function initGame() {
         session.active = true;
         session.board = Array(settings.size * settings.size).fill(null);
-        
-        // КЛЮЧЕВОЙ ФИКС: 
-        // Если выбран старт "Игрок" (p), то первым ходит знак игрока (settings.playerSide)
-        // Если выбран старт "Бот" (b), то первым ходит знак бота (session.botSide)
         session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
         session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
-        
         session.winLines = generateLines(settings.size, settings.win);
         document.getElementById('menu').classList.add('hidden');
         render();
@@ -264,7 +266,6 @@
 
     function checkTurn() {
         if (!session.active) return;
-
         if (session.turn === session.botSide) {
             setStatus("БОТ ДУМАЕТ (" + session.botSide + ")...");
             document.getElementById('board').classList.add('locked');
@@ -313,36 +314,19 @@
 
     function botMove() {
         if (!session.active) return;
-        let idx;
-        
-        if (settings.diff === 'easy') {
-            // ИЗИ: 70% шанс на случайный ход
-            if (Math.random() < 0.7) {
-                idx = randomEmpty();
-            } else {
-                idx = findBestLogic();
-            }
-        } else if (settings.diff === 'norm') {
-            // НОРМ: Видит победу и блокирует игрока, но не считает глубоко
-            idx = findBestLogic();
-        } else {
-            // БОГ: Полная логика
-            idx = findGodMove();
-        }
-
+        let idx = (settings.diff === 'god') ? findGodMove() : findBestLogic();
+        if (settings.diff === 'easy' && Math.random() < 0.7) idx = randomEmpty();
         doMove(idx, session.botSide);
         checkTurn();
     }
 
     function findBestLogic() {
-        // 1. Могу выиграть?
         for(let i=0; i<session.board.length; i++) {
             if(!session.board[i]) {
                 let b = [...session.board]; b[i] = session.botSide;
                 if(checkWin(b, session.botSide)) return i;
             }
         }
-        // 2. Игрок может выиграть? Блокируем
         for(let i=0; i<session.board.length; i++) {
             if(!session.board[i]) {
                 let b = [...session.board]; b[i] = settings.playerSide;
@@ -353,22 +337,40 @@
     }
 
     function findGodMove() {
-        // Мгновенная проверка
-        let logic = findBestLogic();
-        // Если это не рандом (т.е. нашли победу или блок), возвращаем
-        let bClone = [...session.board];
-        let win = false;
-        for(let i=0; i<bClone.length; i++) {
-           if(!bClone[i]) {
-               bClone[i] = session.botSide; if(checkWin(bClone, session.botSide)) return i;
-               bClone[i] = settings.playerSide; if(checkWin(bClone, settings.playerSide)) return i;
-               bClone[i] = null;
-           }
+        // Мгновенная проверка на победу или блок
+        for(let i=0; i<session.board.length; i++) {
+            if(!session.board[i]) {
+                let b = [...session.board]; b[i] = session.botSide;
+                if(checkWin(b, session.botSide)) return i;
+            }
+        }
+        for(let i=0; i<session.board.length; i++) {
+            if(!session.board[i]) {
+                let b = [...session.board]; b[i] = settings.playerSide;
+                if(checkWin(b, settings.playerSide)) return i;
+            }
         }
 
         if (settings.size === 3) return minimax(session.board, 0, true, -Infinity, Infinity).index;
         
-        // Для больших полей - центр или углы
+        // PRO ЛОГИКА (ВЕСА) для больших полей
+        if (settings.pro) {
+            let weights = Array(session.board.length).fill(0);
+            session.winLines.forEach(line => {
+                let countBot = line.filter(idx => session.board[idx] === session.botSide).length;
+                let countPlayer = line.filter(idx => session.board[idx] === settings.playerSide).length;
+                if (countBot > 0 && countPlayer > 0) return; // линия заблокирована
+                line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + countBot + countPlayer); });
+            });
+            let maxWeight = -1, bestMoves = [];
+            weights.forEach((w, i) => {
+                if (session.board[i]) return;
+                if (w > maxWeight) { maxWeight = w; bestMoves = [i]; }
+                else if (w === maxWeight) bestMoves.push(i);
+            });
+            return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+        }
+
         const center = Math.floor(session.board.length / 2);
         if (!session.board[center]) return center;
         return randomEmpty();
@@ -418,9 +420,7 @@
 
     function getHint() {
         if (!session.active || session.turn !== settings.playerSide) return;
-        const idx = (settings.size === 3) ? 
-            minimax(session.board, 0, false, -Infinity, Infinity).index : 
-            findBestLogic();
+        const idx = findGodMove();
         const cell = document.getElementById('board').children[idx];
         cell.classList.add('hint');
         setTimeout(() => cell.classList.remove('hint'), 800);
