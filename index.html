@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Tic-Tac-Toe AI</title>
+    <title>NEON TACTICS</title>
     <style>
         :root {
-            --bg-color: #1a1a2e;
-            --panel-bg: rgba(255, 255, 255, 0.05);
-            --primary: #00b4d8;
-            --accent-x: #ff6b6b;
-            --accent-o: #4dffea;
-            --text: #ffffff;
-            --grid-size: 3; /* Меняется через JS */
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --primary: #38bdf8;       /* Light Blue */
+            --accent-x: #f472b6;      /* Pink */
+            --accent-o: #2dd4bf;      /* Teal */
+            --text: #f1f5f9;
+            --grid-size: 3;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: radial-gradient(circle at top, #1e293b, #0f172a);
             color: var(--text);
             min-height: 100vh;
             display: flex;
@@ -34,7 +35,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 600px;
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -45,777 +46,720 @@
         h1 {
             color: var(--primary);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 15px rgba(0, 180, 216, 0.4);
+            letter-spacing: 4px;
+            font-weight: 800;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
             text-align: center;
-            font-size: 2rem;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
         }
 
         /* --- Settings Panel --- */
         .settings-panel {
             background: var(--panel-bg);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 20px;
             width: 100%;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 15px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
-        .setting-group {
+        .setting-row {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .setting-group h3 {
-            font-size: 0.9rem;
-            color: #90e0ef;
-            opacity: 0.8;
+        .setting-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            font-weight: 600;
         }
 
-        .toggle-container {
+        .toggle-group {
             display: flex;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
             padding: 4px;
             gap: 4px;
         }
 
         .toggle-btn {
             flex: 1;
-            padding: 8px;
+            padding: 10px;
             border: none;
             background: transparent;
-            color: #aaa;
+            color: #64748b;
             cursor: pointer;
-            border-radius: 6px;
+            border-radius: 8px;
             transition: all 0.2s;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+        }
+
+        .toggle-btn:hover {
+            color: #cbd5e1;
+            background: rgba(255,255,255,0.05);
         }
 
         .toggle-btn.active {
             background: var(--primary);
-            color: white;
-            box-shadow: 0 2px 10px rgba(0, 180, 216, 0.3);
+            color: #0f172a;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
         }
+
+        /* Checkbox slider for Optimization */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .switch-label {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
 
         /* --- Game Board --- */
-        .game-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            width: 100%;
-        }
-
         .status-bar {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            min-height: 1.5em;
-            color: #caf0f8;
             text-align: center;
+            min-height: 24px;
+            color: #e2e8f0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .board {
             display: grid;
-            /* Динамическая сетка */
             grid-template-columns: repeat(var(--grid-size), 1fr);
-            grid-template-rows: repeat(var(--grid-size), 1fr);
-            gap: 8px;
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 16px;
+            gap: 10px;
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 20px;
             width: 100%;
-            max-width: 500px;
-            aspect-ratio: 1 / 1; /* Квадратное поле всегда */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            aspect-ratio: 1/1;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
             position: relative;
         }
 
         .cell {
-            background: rgba(255,255,255,0.07);
-            border-radius: 8px;
-            border: 2px solid transparent;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-            
-            /* Динамический размер шрифта */
-            font-size: calc(300px / var(--grid-size)); 
             font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            
+            /* Dynamic Font Size */
+            font-size: calc(280px / var(--grid-size)); 
         }
 
-        /* Адаптив шрифта для мобильных */
-        @media (max-width: 500px) {
-            .cell {
-                font-size: calc(80vw / var(--grid-size) - 10px);
-            }
+        /* Mobile tweaks */
+        @media (max-width: 480px) {
+            .cell { font-size: calc(85vw / var(--grid-size) - 15px); }
         }
 
-        .cell:hover {
-            background: rgba(255,255,255,0.12);
-        }
-
-        .cell.x { color: var(--accent-x); text-shadow: 0 0 15px rgba(255, 107, 107, 0.5); }
-        .cell.o { color: var(--accent-o); text-shadow: 0 0 15px rgba(77, 255, 234, 0.5); }
+        .cell:hover { transform: scale(0.98); background: rgba(51, 65, 85, 0.9); }
         
+        .cell.x { color: var(--accent-x); text-shadow: 0 0 15px var(--accent-x); }
+        .cell.o { color: var(--accent-o); text-shadow: 0 0 15px var(--accent-o); }
+
         .cell.winner {
-            background: rgba(0, 255, 136, 0.15);
-            border-color: #00ff88;
-            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+            animation: pulse-win 1.5s infinite;
+        }
+        
+        @keyframes pulse-win {
+            0%, 100% { box-shadow: 0 0 15px var(--primary); }
+            50% { box-shadow: 0 0 30px var(--primary); }
         }
 
-        /* Анимация подсказки */
-        .cell.hint-highlight {
-            animation: pulse-hint 1.5s infinite;
-            border: 2px dashed rgba(255, 255, 0, 0.5);
-        }
-
-        @keyframes pulse-hint {
-            0% { background: rgba(255, 255, 0, 0.05); }
-            50% { background: rgba(255, 255, 0, 0.15); }
-            100% { background: rgba(255, 255, 0, 0.05); }
+        .cell.hint {
+            border: 2px dashed #fcd34d;
+            background: rgba(252, 211, 77, 0.1);
         }
 
         /* --- Controls --- */
         .controls {
             display: flex;
             gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
+            width: 100%;
         }
 
         .btn {
-            padding: 12px 24px;
+            flex: 1;
+            padding: 14px;
             border: none;
-            border-radius: 10px;
-            font-weight: bold;
+            border-radius: 12px;
+            font-weight: 700;
             font-size: 1rem;
             cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             transition: transform 0.1s, filter 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .btn:active { transform: translateY(2px); }
 
-        .btn-primary {
-            background: var(--primary);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(0, 180, 216, 0.4);
-        }
-
-        .btn-secondary {
-            background: #495057;
-            color: #fff;
+        .btn-start {
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
         }
 
         .btn-hint {
-            background: #ffd166;
-            color: #333;
+            background: #334155;
+            color: #94a3b8;
+            flex: 0.4;
         }
+        .btn-hint:hover { color: #fcd34d; }
 
-        /* Блокировка кликов когда думает бот */
-        .board.locked {
-            pointer-events: none;
-            opacity: 0.9;
-        }
+        .board.disabled { pointer-events: none; opacity: 0.9; }
 
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>⚔️ Умные Крестики-Нолики 2.0</h1>
+    <h1>Neon Tactics</h1>
 
     <div class="settings-panel">
-        <div class="setting-group">
-            <h3>Размер поля</h3>
-            <div class="toggle-container" id="size-select">
-                <button class="toggle-btn active" data-val="3">3x3</button>
-                <button class="toggle-btn" data-val="4">4x4</button>
-                <button class="toggle-btn" data-val="5">5x5</button>
+        
+        <div class="setting-row">
+            <span class="setting-label">Размер поля</span>
+            <div class="toggle-group" id="size-options">
+                <button class="toggle-btn active" data-value="3">3x3</button>
+                <button class="toggle-btn" data-value="4">4x4</button>
+                <button class="toggle-btn" data-value="5">5x5</button>
             </div>
         </div>
 
-        <div class="setting-group">
-            <h3>Победа (в ряд)</h3>
-            <div class="toggle-container" id="win-select">
-                <button class="toggle-btn active" data-val="3">3</button>
-                <button class="toggle-btn" data-val="4">4</button>
-                <button class="toggle-btn" data-val="5">5</button>
+        <div class="setting-row">
+            <span class="setting-label">Условие победы (в ряд)</span>
+            <div class="toggle-group" id="win-options">
+                <button class="toggle-btn active" data-value="3">3</button>
+                <button class="toggle-btn" data-value="4">4</button>
+                <button class="toggle-btn" data-value="5">5</button>
             </div>
         </div>
 
-        <div class="setting-group">
-            <h3>Сложность</h3>
-            <div class="toggle-container" id="diff-select">
-                <button class="toggle-btn" data-val="easy">Легко</button>
-                <button class="toggle-btn" data-val="medium">Средне</button>
-                <button class="toggle-btn active" data-val="hard">Хард</button>
+        <div class="setting-row">
+            <span class="setting-label">Интеллект бота</span>
+            <div class="toggle-group" id="diff-options">
+                <button class="toggle-btn" data-value="easy">Глупый</button>
+                <button class="toggle-btn" data-value="medium">Норм</button>
+                <button class="toggle-btn active" data-value="hard">Бог</button>
             </div>
         </div>
 
-        <div class="setting-group">
-            <h3>Вы играете за</h3>
-            <div class="toggle-container" id="symbol-select">
-                <button class="toggle-btn active" data-val="X">X (Крестик)</button>
-                <button class="toggle-btn" data-val="O">O (Нолик)</button>
+        <div class="setting-row" style="flex-direction: row; gap: 10px;">
+            <div style="flex: 1;">
+                <span class="setting-label">Вы играете за</span>
+                <div class="toggle-group" id="symbol-options">
+                    <button class="toggle-btn active" data-value="X">X</button>
+                    <button class="toggle-btn" data-value="O">O</button>
+                </div>
+            </div>
+            <div style="flex: 1;">
+                <span class="setting-label">Первый ход</span>
+                <div class="toggle-group" id="starter-options">
+                    <button class="toggle-btn active" data-value="player">Я</button>
+                    <button class="toggle-btn" data-value="bot">Бот</button>
+                </div>
             </div>
         </div>
 
-        <div class="setting-group">
-            <h3>Первый ход</h3>
-            <div class="toggle-container" id="starter-select">
-                <button class="toggle-btn active" data-val="player">Игрок</button>
-                <button class="toggle-btn" data-val="bot">Бот</button>
-            </div>
+        <div class="switch-container">
+            <span class="switch-label">⚡ Оптимизация (Быстрый ход)</span>
+            <label class="switch">
+                <input type="checkbox" id="opt-toggle" checked>
+                <span class="slider"></span>
+            </label>
         </div>
+
     </div>
 
-    <div class="game-area">
-        <div class="status-bar" id="status">Нажмите "Старт" для начала игры</div>
-        <div class="board" id="board">
-            </div>
-        
-        <div class="controls">
-            <button class="btn btn-primary" id="btn-new-game">🎮 Старт / Рестарт</button>
-            <button class="btn btn-hint" id="btn-hint">💡 Подсказка</button>
-        </div>
+    <div class="status-bar" id="status">Нажми СТАРТ для начала</div>
+    
+    <div class="board" id="board"></div>
+
+    <div class="controls">
+        <button class="btn btn-start" id="start-btn">Старт / Сброс</button>
+        <button class="btn btn-hint" id="hint-btn">?</button>
     </div>
 </div>
 
 <script>
-/**
- * Ядро игры: Логика состояния и проверки победы
- */
-class GameEngine {
-    constructor() {
-        this.board = [];
-        this.size = 3;
-        this.winLength = 3;
-        this.currentPlayer = 'X'; // Всегда X или O
-        this.isActive = false;
-        this.winner = null; // 'X', 'O', 'draw' или null
-        this.winningLine = [];
-    }
+    // --- Логика Игры ---
+    const GameState = {
+        board: [],
+        size: 3,
+        winLength: 3,
+        currentPlayer: null, // 'X' или 'O'
+        isActive: false,
+        winner: null,
+        winLine: []
+    };
 
-    init(size, winLength) {
-        this.size = size;
-        this.winLength = winLength;
-        this.board = Array(size * size).fill(null);
-        this.currentPlayer = 'X'; // По правилам крестики ходят первыми, но мы можем пропускать ход
-        this.isActive = true;
-        this.winner = null;
-        this.winningLine = [];
-    }
+    // --- Настройки ---
+    const Settings = {
+        size: 3,
+        winLength: 3,
+        difficulty: 'hard',
+        userSymbol: 'X',
+        botSymbol: 'O',
+        starter: 'player', // 'player' или 'bot'
+        optimized: true
+    };
 
-    makeMove(index, symbol) {
-        if (!this.isActive || this.board[index] !== null) return false;
-        this.board[index] = symbol;
-        
-        if (this.checkWin(index, symbol)) {
-            this.isActive = false;
-            this.winner = symbol;
-        } else if (this.board.every(cell => cell !== null)) {
-            this.isActive = false;
-            this.winner = 'draw';
-        } else {
-            this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
-        }
-        return true;
-    }
+    // --- Искусственный Интеллект ---
+    const AI = {
+        getBestMove(board, symbol) {
+            // 1. Уровень сложности: Вероятность ошибки
+            let errorChance = 0;
+            if (Settings.difficulty === 'easy') errorChance = 0.8; // 80% тупит
+            else if (Settings.difficulty === 'medium') errorChance = 0.3; // 30% тупит
 
-    checkWin(lastIndex, symbol) {
-        // Оптимизированная проверка победы вокруг последнего хода
-        // Но для надежности AI используем полную проверку всего поля
-        const lines = this.getAllLines();
-        for (let line of lines) {
-            if (line.every(idx => this.board[idx] === symbol)) {
-                this.winningLine = line;
-                return true;
+            // Если бот решил "тупить", делаем случайный ход
+            if (Math.random() < errorChance) {
+                const empty = this.getEmptyCells(board);
+                return empty[Math.floor(Math.random() * empty.length)];
             }
-        }
-        return false;
-    }
 
-    // Генерация всех возможных выигрышных линий (кэширование можно добавить для скорости)
-    getAllLines() {
+            // 2. Хардкор режим: Minimax
+            // Определяем максимальную глубину просчета
+            let maxDepth = 100;
+            if (Settings.optimized) {
+                // Если включена оптимизация, режем глубину
+                if (Settings.size === 3) maxDepth = 9;
+                else if (Settings.size === 4) maxDepth = 3;
+                else maxDepth = 2; // Для 5x5 очень мелко
+            } else {
+                // Если оптимизация ВЫКЛ, бот думает дольше
+                if (Settings.size === 3) maxDepth = 9;
+                else if (Settings.size === 4) maxDepth = 5;
+                else maxDepth = 3;
+            }
+
+            // Первый ход бота на пустом поле - всегда центр (оптимизация)
+            const emptyCells = this.getEmptyCells(board);
+            if (emptyCells.length === board.length) {
+                return Math.floor(board.length / 2);
+            }
+            if (emptyCells.length === board.length - 1 && Settings.size >= 4) {
+                 // На больших полях если игрок сходил не в центр, бот занимает центр
+                 const center = Math.floor(board.length / 2);
+                 if (board[center] === null) return center;
+            }
+
+            return this.minimax(board, 0, true, -Infinity, Infinity, symbol, maxDepth).index;
+        },
+
+        minimax(board, depth, isMaximizing, alpha, beta, playerSymbol, maxDepthLimit) {
+            const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
+            
+            // Проверка терминальных состояний
+            if (this.checkWin(board, playerSymbol)) return { score: 1000 - depth };
+            if (this.checkWin(board, opponentSymbol)) return { score: -1000 + depth };
+            
+            const availSpots = this.getEmptyCells(board);
+            if (availSpots.length === 0 || depth >= maxDepthLimit) {
+                return { score: this.evaluateBoard(board, playerSymbol, opponentSymbol) };
+            }
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                let bestMove = -1;
+                for (let i = 0; i < availSpots.length; i++) {
+                    const idx = availSpots[i];
+                    board[idx] = playerSymbol;
+                    const result = this.minimax(board, depth + 1, false, alpha, beta, playerSymbol, maxDepthLimit);
+                    board[idx] = null;
+                    if (result.score > bestScore) {
+                        bestScore = result.score;
+                        bestMove = idx;
+                    }
+                    alpha = Math.max(alpha, bestScore);
+                    if (beta <= alpha) break;
+                }
+                return { score: bestScore, index: bestMove };
+            } else {
+                let bestScore = Infinity;
+                let bestMove = -1;
+                for (let i = 0; i < availSpots.length; i++) {
+                    const idx = availSpots[i];
+                    board[idx] = opponentSymbol;
+                    const result = this.minimax(board, depth + 1, true, alpha, beta, playerSymbol, maxDepthLimit);
+                    board[idx] = null;
+                    if (result.score < bestScore) {
+                        bestScore = result.score;
+                        bestMove = idx;
+                    }
+                    beta = Math.min(beta, bestScore);
+                    if (beta <= alpha) break;
+                }
+                return { score: bestScore, index: bestMove };
+            }
+        },
+
+        getEmptyCells(board) {
+            const cells = [];
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) cells.push(i);
+            }
+            return cells;
+        },
+
+        // Эвристическая оценка (когда не дошли до конца игры)
+        evaluateBoard(board, player, opponent) {
+            let score = 0;
+            const lines = getAllLines(Settings.size, Settings.winLength);
+            
+            for (let line of lines) {
+                let pCount = 0;
+                let oCount = 0;
+                for (let idx of line) {
+                    if (board[idx] === player) pCount++;
+                    else if (board[idx] === opponent) oCount++;
+                }
+                if (pCount > 0 && oCount === 0) score += Math.pow(10, pCount);
+                if (oCount > 0 && pCount === 0) score -= Math.pow(10, oCount);
+            }
+            return score;
+        },
+
+        // Упрощенная проверка победы для AI (быстрая)
+        checkWin(board, sym) {
+            const lines = getAllLines(Settings.size, Settings.winLength);
+            for (let line of lines) {
+                if (line.every(idx => board[idx] === sym)) return true;
+            }
+            return false;
+        }
+    };
+
+    // --- Кэширование линий (оптимизация) ---
+    let cachedLines = [];
+    let lastCacheKey = '';
+
+    function getAllLines(size, winLen) {
+        const key = `${size}-${winLen}`;
+        if (lastCacheKey === key && cachedLines.length > 0) return cachedLines;
+
         const lines = [];
-        const s = this.size;
-        const w = this.winLength;
+        // Rows
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c <= size - winLen; c++) {
+                const line = [];
+                for (let k = 0; k < winLen; k++) line.push(r * size + c + k);
+                lines.push(line);
+            }
+        }
+        // Cols
+        for (let c = 0; c < size; c++) {
+            for (let r = 0; r <= size - winLen; r++) {
+                const line = [];
+                for (let k = 0; k < winLen; k++) line.push((r + k) * size + c);
+                lines.push(line);
+            }
+        }
+        // Diagonals
+        for (let r = 0; r <= size - winLen; r++) {
+            for (let c = 0; c <= size - winLen; c++) {
+                const line = [];
+                for (let k = 0; k < winLen; k++) line.push((r + k) * size + c + k);
+                lines.push(line);
+            }
+        }
+        // Anti-Diagonals
+        for (let r = 0; r <= size - winLen; r++) {
+            for (let c = winLen - 1; c < size; c++) {
+                const line = [];
+                for (let k = 0; k < winLen; k++) line.push((r + k) * size + c - k);
+                lines.push(line);
+            }
+        }
 
-        // Horizontal
-        for (let r = 0; r < s; r++) {
-            for (let c = 0; c <= s - w; c++) {
-                const line = [];
-                for (let k = 0; k < w; k++) line.push(r * s + c + k);
-                lines.push(line);
-            }
-        }
-        // Vertical
-        for (let c = 0; c < s; c++) {
-            for (let r = 0; r <= s - w; r++) {
-                const line = [];
-                for (let k = 0; k < w; k++) line.push((r + k) * s + c);
-                lines.push(line);
-            }
-        }
-        // Diagonal
-        for (let r = 0; r <= s - w; r++) {
-            for (let c = 0; c <= s - w; c++) {
-                const line = [];
-                for (let k = 0; k < w; k++) line.push((r + k) * s + c + k);
-                lines.push(line);
-            }
-        }
-        // Anti-Diagonal
-        for (let r = 0; r <= s - w; r++) {
-            for (let c = w - 1; c < s; c++) {
-                const line = [];
-                for (let k = 0; k < w; k++) line.push((r + k) * s + c - k);
-                lines.push(line);
-            }
-        }
+        lastCacheKey = key;
+        cachedLines = lines;
         return lines;
     }
 
-    getEmptyCells() {
-        return this.board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-    }
-    
-    // Клон состояния для AI симуляции
-    clone() {
-        const newGame = new GameEngine();
-        newGame.size = this.size;
-        newGame.winLength = this.winLength;
-        newGame.board = [...this.board];
-        newGame.currentPlayer = this.currentPlayer;
-        newGame.isActive = this.isActive;
-        return newGame;
-    }
-}
+    // --- UI Logic ---
+    const UI = {
+        init() {
+            this.setupListeners();
+            this.renderEmptyBoard();
+        },
 
-/**
- * Искусственный Интеллект
- */
-class AI {
-    constructor(game) {
-        this.game = game;
-        this.maxDepth = 100; // По умолчанию
-    }
-
-    getBestMove(difficulty, botSymbol) {
-        // Ограничение глубины в зависимости от размера поля
-        if (this.game.size === 3) this.maxDepth = 9;
-        else if (this.game.size === 4) this.maxDepth = 4; // Ограничиваем для 4x4
-        else this.maxDepth = 3; // Сильное ограничение для 5x5
-
-        if (difficulty === 'easy') return this.getRandomMove();
-        if (difficulty === 'medium') {
-            // 30% ошибка, иначе Minimax с малой глубиной
-            if (Math.random() < 0.3) return this.getRandomMove();
-            this.maxDepth = 2; 
-            return this.minimaxRoot(botSymbol);
-        }
-        if (difficulty === 'hard') {
-            return this.minimaxRoot(botSymbol);
-        }
-    }
-
-    getRandomMove() {
-        const empties = this.game.getEmptyCells();
-        if (empties.length === 0) return -1;
-        return empties[Math.floor(Math.random() * empties.length)];
-    }
-
-    // Оценка позиции для эвристики (когда достигнут лимит глубины)
-    evaluate(board, playerSymbol, opponentSymbol) {
-        let score = 0;
-        const lines = this.game.getAllLines();
-        
-        for (let line of lines) {
-            let pCount = 0;
-            let oCount = 0;
-            for (let idx of line) {
-                if (board[idx] === playerSymbol) pCount++;
-                else if (board[idx] === opponentSymbol) oCount++;
-            }
-
-            // Если линия чистая (нет врагов), это потенциал
-            if (oCount === 0 && pCount > 0) score += Math.pow(10, pCount);
-            // Если у врага линия почти собрана - это очень плохо
-            if (pCount === 0 && oCount > 0) score -= Math.pow(10, oCount + 1); // Приоритет защите
-        }
-        return score;
-    }
-
-    minimaxRoot(playerSymbol) {
-        const empties = this.game.getEmptyCells();
-        // Первый ход в центр или угол для оптимизации
-        if (empties.length === this.game.board.length) {
-             const center = Math.floor(this.game.board.length / 2);
-             return center;
-        }
-
-        let bestScore = -Infinity;
-        let bestMove = -1;
-        const opponent = playerSymbol === 'X' ? 'O' : 'X';
-
-        for (let move of empties) {
-            this.game.board[move] = playerSymbol;
-            // Проверяем мгновенную победу
-            if (this.game.checkWin(move, playerSymbol)) {
-                this.game.board[move] = null;
-                return move;
-            }
-
-            let score = this.minimax(this.game.board, 0, false, -Infinity, Infinity, playerSymbol, opponent);
-            this.game.board[move] = null; // Backtrack
-
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = move;
-            }
-        }
-        return bestMove;
-    }
-
-    minimax(board, depth, isMaximizing, alpha, beta, player, opponent) {
-        // Проверка терминальных состояний (победа/поражение) в предыдущем ходе
-        // Примечание: проверка checkWin здесь дорогая, поэтому мы проверяем "случилась ли победа" до входа
-        // Но для упрощения кода оставим проверку тут, но оптимизируем
-        
-        // Для упрощения, проверим статус на основе предыдущего хода (эмуляция)
-        // В реальном Minimax лучше передавать lastMove, но здесь используем эвристику если глубина > 0
-        
-        // Базовый случай для рекурсии - лимит глубины
-        if (depth >= this.maxDepth) {
-            return this.evaluate(board, player, opponent);
-        }
-
-        const empties = [];
-        for(let i=0; i<board.length; i++) if(board[i]===null) empties.push(i);
-
-        if (empties.length === 0) return 0; // Ничья
-
-        if (isMaximizing) {
-            let maxEval = -Infinity;
-            for (let move of empties) {
-                board[move] = player;
-                // Check win immediately
-                let evalScore;
-                if (this.isWin(board, player)) {
-                    evalScore = 10000 - depth;
-                } else {
-                    evalScore = this.minimax(board, depth + 1, false, alpha, beta, player, opponent);
-                }
-                board[move] = null;
-                
-                maxEval = Math.max(maxEval, evalScore);
-                alpha = Math.max(alpha, evalScore);
-                if (beta <= alpha) break;
-            }
-            return maxEval;
-        } else {
-            let minEval = Infinity;
-            for (let move of empties) {
-                board[move] = opponent;
-                // Check win immediately
-                let evalScore;
-                if (this.isWin(board, opponent)) {
-                    evalScore = -10000 + depth;
-                } else {
-                    evalScore = this.minimax(board, depth + 1, true, alpha, beta, player, opponent);
-                }
-                board[move] = null;
-
-                minEval = Math.min(minEval, evalScore);
-                beta = Math.min(beta, evalScore);
-                if (beta <= alpha) break;
-            }
-            return minEval;
-        }
-    }
-
-    // Упрощенная проверка победы для Minimax (работает быстрее чем классовая)
-    isWin(board, sym) {
-        // Используем кэшированные линии из GameEngine
-        const lines = this.game.getAllLines();
-        for (let line of lines) {
-            let count = 0;
-            for (let idx of line) {
-                if (board[idx] === sym) count++;
-                else break; 
-            }
-            if (count === this.game.winLength) return true;
-        }
-        return false;
-    }
-}
-
-/**
- * UI Контроллер
- */
-const UI = {
-    settings: {
-        size: 3,
-        win: 3,
-        difficulty: 'hard',
-        userSymbol: 'X',
-        starter: 'player'
-    },
-    game: new GameEngine(),
-    ai: null,
-    boardEl: document.getElementById('board'),
-    statusEl: document.getElementById('status'),
-    isBotTurn: false,
-
-    init() {
-        this.setupToggles();
-        document.getElementById('btn-new-game').addEventListener('click', () => this.startGame());
-        document.getElementById('btn-hint').addEventListener('click', () => this.showHint());
-        this.ai = new AI(this.game);
-        
-        // Auto start
-        this.renderBoard(); 
-    },
-
-    setupToggles() {
-        document.querySelectorAll('.toggle-container').forEach(container => {
-            container.addEventListener('click', (e) => {
-                if (e.target.classList.contains('toggle-btn')) {
-                    // Remove active from siblings
-                    container.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    
-                    // Update setting
-                    const type = container.id.split('-')[0]; // size, win, diff...
-                    let val = e.target.dataset.val;
-                    if (!isNaN(val)) val = parseInt(val);
-                    
-                    this.settings[type] = val;
-
-                    // Валидация: условие победы не может быть больше размера поля
-                    if (type === 'size') {
-                         this.validateWinCondition();
-                    }
-                    if (type === 'size' || type === 'win') {
-                        // Визуально сбросить игру, если меняем параметры поля
-                        this.game.isActive = false;
-                        this.statusEl.textContent = 'Настройки изменены. Нажмите Старт.';
-                    }
-                }
+        setupListeners() {
+            // Кнопки настроек
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const group = btn.parentElement;
+                    group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this.updateSettings();
+                });
             });
-        });
-    },
 
-    validateWinCondition() {
-        const winContainer = document.getElementById('win-select');
-        const btns = winContainer.querySelectorAll('.toggle-btn');
-        let maxAvailable = 3;
+            // Галочка оптимизации
+            document.getElementById('opt-toggle').addEventListener('change', this.updateSettings.bind(this));
 
-        btns.forEach(btn => {
-            const val = parseInt(btn.dataset.val);
-            if (val > this.settings.size) {
-                btn.style.display = 'none';
-                if (btn.classList.contains('active')) {
-                    btn.classList.remove('active');
-                }
-            } else {
-                btn.style.display = 'block';
-                maxAvailable = val;
-            }
-        });
+            // Кнопка Старт
+            document.getElementById('start-btn').addEventListener('click', () => this.startGame());
 
-        // Если текущий выбор скрыт, выбрать максимальный доступный
-        if (this.settings.win > this.settings.size) {
-             this.settings.win = this.settings.size;
-             // Визуально обновить
-             btns.forEach(b => {
-                 if(parseInt(b.dataset.val) === this.settings.size) b.classList.add('active');
-             });
-        }
-    },
+            // Кнопка Подсказка
+            document.getElementById('hint-btn').addEventListener('click', () => this.showHint());
+        },
 
-    startGame() {
-        this.game.init(this.settings.size, this.settings.win);
-        this.ai = new AI(this.game);
-        this.isBotTurn = false;
-        
-        // CSS Grid Update
-        document.documentElement.style.setProperty('--grid-size', this.settings.size);
-        
-        this.renderBoard();
-        this.updateStatus(`Игра началась! Вы за ${this.settings.userSymbol}`);
+        updateSettings() {
+            Settings.size = parseInt(document.querySelector('#size-options .active').dataset.value);
+            Settings.winLength = parseInt(document.querySelector('#win-options .active').dataset.value);
+            Settings.difficulty = document.querySelector('#diff-options .active').dataset.value;
+            Settings.userSymbol = document.querySelector('#symbol-options .active').dataset.value;
+            Settings.botSymbol = Settings.userSymbol === 'X' ? 'O' : 'X';
+            Settings.starter = document.querySelector('#starter-options .active').dataset.value;
+            Settings.optimized = document.getElementById('opt-toggle').checked;
 
-        // Логика первого хода
-        // По правилам: X ходит первым.
-        // Если User = X и Starter = Player -> User ходит.
-        // Если User = O и Starter = Player -> User (O) ждет, пока X (Bot) сходит? 
-        // Обычно в играх "Starter = Player" значит Player делает первый мув своим символом.
-        // Сделаем так: Тот, кто начинает, получает символ X? Нет, пользователь выбрал символ.
-        // Давайте так: Крестики всегда ходят первыми. 
-        // Если User выбрал O, значит Бот (X) ходит первым, даже если выбрано "Player starts"?
-        // Чтобы не путать: "Первый ход" определяет, чей сейчас ход. Символ привязан к игроку.
-        
-        let currentMoverIsUser = (this.settings.starter === 'player');
-        
-        // Насильно ставим current player в движке на того, кто начинает
-        // Но символы X/O важны для логики победы.
-        // Пусть X всегда начинает. 
-        // Сценарий 1: User X, Player Start -> User moves (X). OK.
-        // Сценарий 2: User O, Bot Start -> Bot moves (X). OK.
-        // Сценарий 3: User X, Bot Start -> Bot moves (O)? Нет, крестики первые.
-        
-        // Проще: Кто начинает, тот играет Крестиками (X).
-        // Если пользователь выбрал "Играть за O", то он играет Ноликами, значит Бот играет Крестиками и ходит первым.
-        
-        // Но пользователь хочет выбирать и то, и то.
-        // Реализация: X всегда ходит первым.
-        // Если User взял X:
-        //    - Starter Player: ход User.
-        //    - Starter Bot: Бот делает ход (как X).
-        // Если User взял O:
-        //    - Starter Player: НЕВОЗМОЖНО по правилам TicTacToe (X first). 
-        //    - НО мы сделаем гибко: Тот, кто начинает, ставит СВОЙ символ первым.
-        
-        this.game.currentPlayer = (this.settings.starter === 'player') ? this.settings.userSymbol : (this.settings.userSymbol === 'X' ? 'O' : 'X');
-        
-        if (this.settings.starter === 'bot') {
-            this.makeBotMove();
-        }
-    },
-
-    renderBoard() {
-        this.boardEl.innerHTML = '';
-        this.boardEl.classList.remove('locked');
-        
-        this.game.board.forEach((cell, index) => {
-            const el = document.createElement('div');
-            el.className = 'cell';
-            if (cell) {
-                el.classList.add(cell.toLowerCase());
-                el.textContent = cell;
-            }
-            el.dataset.index = index;
-            el.onclick = () => this.handleCellClick(index);
-            this.boardEl.appendChild(el);
-        });
-    },
-
-    handleCellClick(index) {
-        if (this.isBotTurn || !this.game.isActive) return;
-        
-        // Проверка: сейчас ход игрока?
-        if (this.game.currentPlayer !== this.settings.userSymbol) return;
-
-        if (this.game.makeMove(index, this.settings.userSymbol)) {
-            this.updateCell(index);
-            this.checkGameState();
-            
-            if (this.game.isActive) {
-                this.makeBotMove();
-            }
-        }
-    },
-
-    async makeBotMove() {
-        this.isBotTurn = true;
-        this.boardEl.classList.add('locked');
-        this.statusEl.textContent = 'Бот думает...';
-        
-        // Небольшая задержка для реализма
-        await new Promise(r => setTimeout(r, 600));
-
-        const botSymbol = this.settings.userSymbol === 'X' ? 'O' : 'X';
-        
-        // Чтобы UI не вис на 5x5 Hard, используем setTimeout
-        setTimeout(() => {
-            const move = this.ai.getBestMove(this.settings.difficulty, botSymbol);
-            
-            if (move !== -1) {
-                this.game.makeMove(move, botSymbol);
-                this.updateCell(move);
-                this.checkGameState();
-            }
-            
-            if (this.game.isActive) {
-                this.isBotTurn = false;
-                this.boardEl.classList.remove('locked');
-                this.statusEl.textContent = `Ваш ход (${this.settings.userSymbol})`;
-            }
-        }, 10);
-    },
-
-    updateCell(index) {
-        const cell = this.boardEl.children[index];
-        const val = this.game.board[index];
-        if (val) {
-            cell.classList.add(val.toLowerCase());
-            cell.textContent = val;
-        }
-    },
-
-    checkGameState() {
-        if (!this.game.isActive) {
-            this.isBotTurn = false;
-            this.boardEl.classList.remove('locked');
-            
-            if (this.game.winner === 'draw') {
-                this.statusEl.textContent = 'Ничья! 🤝';
-                this.statusEl.style.color = '#fff';
-            } else {
-                const winner = this.game.winner;
-                const isUserWin = winner === this.settings.userSymbol;
-                this.statusEl.textContent = isUserWin ? 'Вы победили! 🎉' : 'Бот победил 🤖';
-                this.statusEl.style.color = isUserWin ? '#00ff88' : '#ff6b6b';
-                
-                // Highlight winning line
-                this.game.winningLine.forEach(idx => {
-                    this.boardEl.children[idx].classList.add('winner');
+            // Валидация: WinLength не может быть больше Size
+            if (Settings.winLength > Settings.size) {
+                // Если условие победы больше поля, сбрасываем на макс. возможное
+                Settings.winLength = Settings.size;
+                // Визуальное обновление кнопок
+                document.querySelectorAll('#win-options .toggle-btn').forEach(b => {
+                    b.classList.remove('active');
+                    if(parseInt(b.dataset.value) === Settings.size) b.classList.add('active');
                 });
             }
-        }
-    },
 
-    showHint() {
-        if (!this.game.isActive || this.isBotTurn) return;
-        
-        // Удаляем старую подсказку
-        document.querySelectorAll('.hint-highlight').forEach(el => el.classList.remove('hint-highlight'));
-
-        this.statusEl.textContent = 'Вычисляю лучший ход...';
-        
-        setTimeout(() => {
-            // Используем AI на сложности Hard для игрока
-            const hintMove = this.ai.getBestMove('hard', this.settings.userSymbol);
+            // Обновляем CSS Grid
+            document.documentElement.style.setProperty('--grid-size', Settings.size);
             
-            if (hintMove !== -1) {
-                const cell = this.boardEl.children[hintMove];
-                cell.classList.add('hint-highlight');
-                this.statusEl.textContent = 'Подсказка отображена!';
-                
-                setTimeout(() => {
-                   cell.classList.remove('hint-highlight');
-                }, 2000);
+            // Если игра не идет, перерисовываем пустую доску
+            if (!GameState.isActive) {
+                this.renderEmptyBoard();
             }
-        }, 50);
-    }
-};
+        },
 
-// Start
-UI.init();
+        renderEmptyBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            boardEl.classList.remove('disabled');
+            const total = Settings.size * Settings.size;
+            
+            for(let i=0; i<total; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                boardEl.appendChild(cell);
+            }
+            document.getElementById('status').textContent = 'Нажми СТАРТ';
+            document.getElementById('status').style.color = '#e2e8f0';
+        },
 
+        startGame() {
+            // Считываем настройки в последний раз перед стартом
+            this.updateSettings();
+
+            // Инициализация состояния
+            GameState.size = Settings.size;
+            GameState.winLength = Settings.winLength;
+            GameState.board = Array(Settings.size * Settings.size).fill(null);
+            GameState.isActive = true;
+            GameState.winner = null;
+            GameState.winLine = [];
+            
+            // Кто ходит первым?
+            GameState.currentPlayer = (Settings.starter === 'player') 
+                ? Settings.userSymbol 
+                : Settings.botSymbol;
+
+            this.drawBoard();
+            this.updateStatus();
+
+            // Если начинает бот
+            if (Settings.starter === 'bot') {
+                this.processBotTurn();
+            }
+        },
+
+        drawBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            boardEl.classList.remove('disabled');
+            
+            GameState.board.forEach((cell, i) => {
+                const el = document.createElement('div');
+                el.className = 'cell';
+                if (cell) el.classList.add(cell.toLowerCase());
+                el.textContent = cell || '';
+                
+                // Клик
+                el.addEventListener('click', () => this.handleCellClick(i));
+                
+                // Подсветка победы
+                if (GameState.winLine.includes(i)) el.classList.add('winner');
+                
+                boardEl.appendChild(el);
+            });
+        },
+
+        handleCellClick(index) {
+            if (!GameState.isActive) return;
+            // Проверка: ход игрока?
+            if (GameState.currentPlayer !== Settings.userSymbol) return;
+            // Клетка свободна?
+            if (GameState.board[index] !== null) return;
+
+            // Ход игрока
+            this.makeMove(index, Settings.userSymbol);
+
+            // Если игра продолжается, запускаем бота
+            if (GameState.isActive) {
+                this.processBotTurn();
+            }
+        },
+
+        makeMove(index, symbol) {
+            GameState.board[index] = symbol;
+            
+            // Проверка победы
+            if (this.checkWin(index, symbol)) {
+                GameState.isActive = false;
+                GameState.winner = symbol;
+            } else if (!GameState.board.includes(null)) {
+                GameState.isActive = false;
+                GameState.winner = 'draw';
+            } else {
+                GameState.currentPlayer = (symbol === 'X') ? 'O' : 'X';
+            }
+
+            this.drawBoard();
+            this.updateStatus();
+        },
+
+        checkWin(lastIdx, symbol) {
+            const lines = getAllLines(GameState.size, GameState.winLength);
+            for (let line of lines) {
+                if (line.every(i => GameState.board[i] === symbol)) {
+                    GameState.winLine = line;
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        async processBotTurn() {
+            const boardEl = document.getElementById('board');
+            boardEl.classList.add('disabled'); // Блок кликов
+            document.getElementById('status').textContent = 'Бот думает...';
+            document.getElementById('status').style.color = '#94a3b8';
+
+            // Небольшая задержка для реализма
+            await new Promise(r => setTimeout(r, 400));
+
+            // Запускаем вычисления (через setTimeout чтобы UI отрисовался)
+            setTimeout(() => {
+                const move = AI.getBestMove([...GameState.board], Settings.botSymbol);
+                
+                if (move !== -1 && GameState.board[move] === null) {
+                    this.makeMove(move, Settings.botSymbol);
+                }
+
+                if (GameState.isActive) {
+                    boardEl.classList.remove('disabled');
+                }
+            }, 10);
+        },
+
+        updateStatus() {
+            const statusEl = document.getElementById('status');
+            if (GameState.isActive) {
+                if (GameState.currentPlayer === Settings.userSymbol) {
+                    statusEl.textContent = `Ваш ход (${Settings.userSymbol})`;
+                    statusEl.style.color = '#38bdf8';
+                } else {
+                    statusEl.textContent = `Ход бота (${Settings.botSymbol})`;
+                    statusEl.style.color = '#94a3b8';
+                }
+            } else {
+                if (GameState.winner === 'draw') {
+                    statusEl.textContent = 'Ничья!';
+                    statusEl.style.color = '#fff';
+                } else {
+                    const youWon = GameState.winner === Settings.userSymbol;
+                    statusEl.textContent = youWon ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ';
+                    statusEl.style.color = youWon ? '#38bdf8' : '#f472b6';
+                }
+            }
+        },
+
+        showHint() {
+            if (!GameState.isActive || GameState.currentPlayer !== Settings.userSymbol) return;
+
+            // Используем AI для поиска хода за игрока
+            // Для подсказки всегда используем Hard (но с учетом текущей настройки оптимизации)
+            const savedDiff = Settings.difficulty;
+            Settings.difficulty = 'hard'; // Временно включаем мозг на максимум
+            
+            const hintMove = AI.getBestMove([...GameState.board], Settings.userSymbol);
+            
+            Settings.difficulty = savedDiff; // Возвращаем настройку
+
+            if (hintMove !== undefined && hintMove !== -1) {
+                const cells = document.querySelectorAll('.cell');
+                cells[hintMove].classList.add('hint');
+                setTimeout(() => cells[hintMove].classList.remove('hint'), 1500);
+            }
+        }
+    };
+
+    // Старт
+    UI.init();
 </script>
+
 </body>
 </html>
