@@ -252,40 +252,62 @@
         }
     }
 
-    function initGame() {
-        session.active = true; session.history = [];
-        session.board = Array(settings.size * settings.size).fill(null);
-        session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
-        session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
-        session.winLines = generateLines(settings.size, settings.win);
-        document.getElementById('menu').classList.add('hidden');
-        render(); checkTurn();
+    // Добавь эту переменную в начало секции <script> к остальным
+let botTimer; 
+
+function initGame() {
+    clearTimeout(botTimer); // Очищаем старые таймеры при перезапуске
+    session.active = true;
+    session.history = [];
+    session.board = Array(settings.size * settings.size).fill(null);
+    session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
+    session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
+    session.winLines = generateLines(settings.size, settings.win);
+    document.getElementById('menu').classList.add('hidden');
+    render();
+    checkTurn();
+}
+
+function undoMove() {
+    clearTimeout(botTimer); // КЛЮЧЕВОЙ МОМЕНТ: останавливаем бота, если он "думал"
+    
+    if (session.history.length === 0) return;
+
+    // Если сейчас ход бота — значит мы просто удаляем 1 последний ход игрока
+    // Если сейчас ход игрока — значит бот уже сходил, удаляем 2 хода (его и наш)
+    let count = (session.turn !== settings.playerSide) ? 1 : 2;
+    
+    if (session.history.length < 2 && session.turn === settings.playerSide) {
+        // Если в истории всего 1 ход (игрок сходил первым), удаляем только его
+        count = 1; 
     }
 
-    function undoMove() {
-        if (session.history.length === 0) return;
-        // Откатываем сразу 2 хода (игрока и бота), чтобы вернуться к моменту выбора
-        let count = (session.history.length >= 2) ? 2 : 1;
-        for(let i=0; i<count; i++) {
+    for(let i = 0; i < count; i++) {
+        if (session.history.length > 0) {
             let lastIdx = session.history.pop();
             session.board[lastIdx] = null;
             session.turn = (session.turn === 'X') ? 'O' : 'X';
         }
-        session.active = true;
-        render(); checkTurn();
     }
 
-    function checkTurn() {
-        if (!session.active) return;
-        if (session.turn === session.botSide) {
-            setStatus("БОТ ДУМАЕТ...");
-            document.getElementById('board').classList.add('locked');
-            setTimeout(botMove, 600);
-        } else {
-            setStatus("ТВОЙ ХОД (" + session.turn + ")");
-            document.getElementById('board').classList.remove('locked');
-        }
+    session.active = true;
+    render();
+    checkTurn();
+}
+
+function checkTurn() {
+    if (!session.active) return;
+    if (session.turn === session.botSide) {
+        setStatus("БОТ ДУМАЕТ...");
+        document.getElementById('board').classList.add('locked');
+        // Сохраняем ссылку на таймер
+        botTimer = setTimeout(botMove, 600); 
+    } else {
+        setStatus("ТВОЙ ХОД (" + session.turn + ")");
+        document.getElementById('board').classList.remove('locked');
     }
+}
+
 
     function render() {
         const b = document.getElementById('board');
