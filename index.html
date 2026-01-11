@@ -2,764 +2,807 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON TACTICS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON TACTICS: EVOLVED</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --panel-bg: rgba(30, 41, 59, 0.7);
-            --primary: #38bdf8;       /* Light Blue */
-            --accent-x: #f472b6;      /* Pink */
-            --accent-o: #2dd4bf;      /* Teal */
-            --text: #f1f5f9;
-            --grid-size: 3;
+            --bg-color: #0b1120;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --primary: #0ea5e9;
+            --accent-x: #f43f5e; /* Red-Pink */
+            --accent-o: #10b981; /* Emerald */
+            --text: #f8fafc;
+            --grid-cols: 3;
+            --cell-size: 0px; /* Вычисляется в JS */
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background: radial-gradient(circle at top, #1e293b, #0f172a);
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
             color: var(--text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
+            padding: 15px;
+            overflow: hidden; /* Убираем скролл */
         }
 
         .container {
-            max-width: 600px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
-        }
-
-        h1 {
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            font-weight: 800;
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
-            text-align: center;
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-
-        /* --- Settings Panel --- */
-        .settings-panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 20px;
+            max-width: 500px;
             width: 100%;
             display: flex;
             flex-direction: column;
             gap: 15px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            align-items: center;
+            height: 100%;
+            justify-content: center;
         }
 
-        .setting-row {
+        h1 {
+            color: var(--primary);
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 1.8rem;
+            text-shadow: 0 0 25px rgba(14, 165, 233, 0.6);
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        /* --- Settings --- */
+        .settings-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 15px;
+            width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            max-height: 1000px;
+            overflow: hidden;
         }
 
-        .setting-label {
+        .settings-panel.collapsed {
+            max-height: 0;
+            padding: 0;
+            opacity: 0;
+            margin: 0;
+            border: none;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .row-label {
             font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
             color: #94a3b8;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .toggle-group {
             display: flex;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 10px;
-            padding: 4px;
-            gap: 4px;
-        }
-
-        .toggle-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            color: #64748b;
-            cursor: pointer;
+            background: rgba(0,0,0,0.3);
             border-radius: 8px;
-            transition: all 0.2s;
-            font-weight: 600;
-            font-size: 0.95rem;
+            padding: 3px;
+            flex: 1;
         }
 
-        .toggle-btn:hover {
-            color: #cbd5e1;
-            background: rgba(255,255,255,0.05);
-        }
-
-        .toggle-btn.active {
-            background: var(--primary);
-            color: #0f172a;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-        }
-
-        /* Checkbox slider for Optimization */
-        .switch-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(15, 23, 42, 0.6);
-            padding: 12px;
-            border-radius: 10px;
-        }
-
-        .switch-label {
-            font-size: 0.95rem;
-            color: #cbd5e1;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 26px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute;
+        .t-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 6px 0;
+            font-size: 0.85rem;
+            font-weight: 700;
             cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #334155;
-            transition: .4s;
-            border-radius: 34px;
+            border-radius: 6px;
+            transition: all 0.2s;
         }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(24px); }
 
-        /* --- Game Board --- */
-        .status-bar {
-            font-size: 1.1rem;
-            font-weight: bold;
-            text-align: center;
-            min-height: 24px;
-            color: #e2e8f0;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        .t-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(14, 165, 233, 0.4);
+        }
+
+        /* --- Board Area --- */
+        .game-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .board {
             display: grid;
-            grid-template-columns: repeat(var(--grid-size), 1fr);
-            gap: 10px;
-            background: rgba(255,255,255,0.03);
-            padding: 15px;
-            border-radius: 20px;
+            grid-template-columns: repeat(var(--grid-cols), 1fr);
+            gap: 8px;
             width: 100%;
-            aspect-ratio: 1/1;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
-            position: relative;
+            height: 100%;
+            background: rgba(255,255,255,0.02);
+            padding: 10px;
+            border-radius: 16px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
         }
 
         .cell {
-            background: rgba(30, 41, 59, 0.8);
-            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
             cursor: pointer;
-            transition: transform 0.2s, background 0.2s;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            
-            /* Dynamic Font Size */
-            font-size: calc(280px / var(--grid-size)); 
+            position: relative;
+            /* CRITICAL FIX: Overflow hidden prevents resizing bugs */
+            overflow: hidden; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background 0.2s, transform 0.1s;
         }
 
-        /* Mobile tweaks */
-        @media (max-width: 480px) {
-            .cell { font-size: calc(85vw / var(--grid-size) - 15px); }
+        .cell span {
+            /* Font size is calculated in JS based on grid size */
+            font-size: var(--font-size);
+            line-height: 1;
+            display: block;
         }
 
-        .cell:hover { transform: scale(0.98); background: rgba(51, 65, 85, 0.9); }
-        
-        .cell.x { color: var(--accent-x); text-shadow: 0 0 15px var(--accent-x); }
-        .cell.o { color: var(--accent-o); text-shadow: 0 0 15px var(--accent-o); }
+        .cell:active { transform: scale(0.95); }
+        .cell:hover { background: rgba(255,255,255,0.05); }
 
-        .cell.winner {
-            background: rgba(255, 255, 255, 0.1);
-            animation: pulse-win 1.5s infinite;
+        .cell.x span { 
+            color: var(--accent-x); 
+            filter: drop-shadow(0 0 10px var(--accent-x)); 
         }
-        
-        @keyframes pulse-win {
-            0%, 100% { box-shadow: 0 0 15px var(--primary); }
-            50% { box-shadow: 0 0 30px var(--primary); }
+        .cell.o span { 
+            color: var(--accent-o); 
+            filter: drop-shadow(0 0 10px var(--accent-o)); 
+        }
+
+        .cell.win {
+            background: rgba(255,255,255,0.1);
+            animation: win-pulse 1s infinite alternate;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        @keyframes win-pulse {
+            from { box-shadow: 0 0 10px var(--primary); }
+            to { box-shadow: 0 0 25px var(--primary); }
         }
 
         .cell.hint {
-            border: 2px dashed #fcd34d;
-            background: rgba(252, 211, 77, 0.1);
+            border: 2px dashed #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
         }
 
-        /* --- Controls --- */
+        /* --- Footer Controls --- */
         .controls {
-            display: flex;
-            gap: 15px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
             width: 100%;
+            align-items: center;
         }
 
-        .btn {
-            flex: 1;
-            padding: 14px;
+        .status {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .action-btn {
+            padding: 12px 20px;
             border: none;
             border-radius: 12px;
             font-weight: 700;
-            font-size: 1rem;
             cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: transform 0.1s, filter 0.2s;
+            font-size: 0.9rem;
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
+        
+        .action-btn:active { transform: scale(0.96); }
 
-        .btn:active { transform: translateY(2px); }
-
-        .btn-start {
-            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+        .btn-main {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         }
 
-        .btn-hint {
-            background: #334155;
+        .btn-sec {
+            background: rgba(255,255,255,0.1);
             color: #94a3b8;
-            flex: 0.4;
         }
-        .btn-hint:hover { color: #fcd34d; }
+        
+        .btn-settings {
+            background: transparent;
+            color: #64748b;
+            padding: 10px;
+        }
 
-        .board.disabled { pointer-events: none; opacity: 0.9; }
+        .locked { pointer-events: none; opacity: 0.8; }
 
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Neon Tactics</h1>
+    <h1>NEON TACTICS</h1>
 
-    <div class="settings-panel">
-        
-        <div class="setting-row">
-            <span class="setting-label">Размер поля</span>
-            <div class="toggle-group" id="size-options">
-                <button class="toggle-btn active" data-value="3">3x3</button>
-                <button class="toggle-btn" data-value="4">4x4</button>
-                <button class="toggle-btn" data-value="5">5x5</button>
+    <div class="settings-panel" id="settings">
+        <div class="row">
+            <span class="row-label">Поле</span>
+            <div class="toggle-group" id="opt-size">
+                <button class="t-btn active" data-v="3">3x3</button>
+                <button class="t-btn" data-v="4">4x4</button>
+                <button class="t-btn" data-v="5">5x5</button>
             </div>
         </div>
-
-        <div class="setting-row">
-            <span class="setting-label">Условие победы (в ряд)</span>
-            <div class="toggle-group" id="win-options">
-                <button class="toggle-btn active" data-value="3">3</button>
-                <button class="toggle-btn" data-value="4">4</button>
-                <button class="toggle-btn" data-value="5">5</button>
+        <div class="row">
+            <span class="row-label">Победа</span>
+            <div class="toggle-group" id="opt-win">
+                <button class="t-btn active" data-v="3">3</button>
+                <button class="t-btn" data-v="4">4</button>
+                <button class="t-btn" data-v="5">5</button>
             </div>
         </div>
-
-        <div class="setting-row">
-            <span class="setting-label">Интеллект бота</span>
-            <div class="toggle-group" id="diff-options">
-                <button class="toggle-btn" data-value="easy">Глупый</button>
-                <button class="toggle-btn" data-value="medium">Норм</button>
-                <button class="toggle-btn active" data-value="hard">Бог</button>
+        <div class="row">
+            <span class="row-label">Бот</span>
+            <div class="toggle-group" id="opt-diff">
+                <button class="t-btn" data-v="easy">Изи</button>
+                <button class="t-btn" data-v="medium">Норм</button>
+                <button class="t-btn active" data-v="hard">БОГ</button>
             </div>
         </div>
-
-        <div class="setting-row" style="flex-direction: row; gap: 10px;">
-            <div style="flex: 1;">
-                <span class="setting-label">Вы играете за</span>
-                <div class="toggle-group" id="symbol-options">
-                    <button class="toggle-btn active" data-value="X">X</button>
-                    <button class="toggle-btn" data-value="O">O</button>
-                </div>
-            </div>
-            <div style="flex: 1;">
-                <span class="setting-label">Первый ход</span>
-                <div class="toggle-group" id="starter-options">
-                    <button class="toggle-btn active" data-value="player">Я</button>
-                    <button class="toggle-btn" data-value="bot">Бот</button>
-                </div>
+        <div class="row">
+            <span class="row-label">Игрок</span>
+            <div class="toggle-group" id="opt-side">
+                <button class="t-btn active" data-v="X">За X</button>
+                <button class="t-btn" data-v="O">За O</button>
             </div>
         </div>
-
-        <div class="switch-container">
-            <span class="switch-label">⚡ Оптимизация (Быстрый ход)</span>
-            <label class="switch">
-                <input type="checkbox" id="opt-toggle" checked>
-                <span class="slider"></span>
-            </label>
+        <div class="row">
+            <span class="row-label">Первый</span>
+            <div class="toggle-group" id="opt-start">
+                <button class="t-btn active" data-v="player">Я</button>
+                <button class="t-btn" data-v="bot">Бот</button>
+            </div>
         </div>
-
     </div>
 
-    <div class="status-bar" id="status">Нажми СТАРТ для начала</div>
-    
-    <div class="board" id="board"></div>
+    <div class="game-wrapper">
+        <div class="board" id="board"></div>
+    </div>
 
     <div class="controls">
-        <button class="btn btn-start" id="start-btn">Старт / Сброс</button>
-        <button class="btn btn-hint" id="hint-btn">?</button>
+        <button class="action-btn btn-sec" id="btn-hint">💡</button>
+        <div class="status" id="status">Нажми Старт</div>
+        <button class="action-btn btn-main" id="btn-start">СТАРТ</button>
     </div>
+    
+    <button class="t-btn" id="toggle-settings" style="margin-top:-10px; color:#475569; font-size:0.8rem;">⚙️ Настройки</button>
 </div>
 
 <script>
-    // --- Логика Игры ---
-    const GameState = {
-        board: [],
-        size: 3,
-        winLength: 3,
-        currentPlayer: null, // 'X' или 'O'
-        isActive: false,
-        winner: null,
-        winLine: []
-    };
+/**
+ * CORE LOGIC ENGINE
+ */
+const Engine = {
+    board: [],
+    size: 3,
+    winReq: 3,
+    active: false,
+    turn: 'X',
+    
+    // Кэш линий для проверки (оптимизация 4x4, 5x5)
+    linesCache: [],
+    cacheKey: '',
 
-    // --- Настройки ---
-    const Settings = {
-        size: 3,
-        winLength: 3,
-        difficulty: 'hard',
-        userSymbol: 'X',
-        botSymbol: 'O',
-        starter: 'player', // 'player' или 'bot'
-        optimized: true
-    };
+    init(size, winReq) {
+        this.size = size;
+        this.winReq = winReq;
+        this.board = Array(size * size).fill(null);
+        this.active = true;
+        this.generateLines();
+    },
 
-    // --- Искусственный Интеллект ---
-    const AI = {
-        getBestMove(board, symbol) {
-            // 1. Уровень сложности: Вероятность ошибки
-            let errorChance = 0;
-            if (Settings.difficulty === 'easy') errorChance = 0.8; // 80% тупит
-            else if (Settings.difficulty === 'medium') errorChance = 0.3; // 30% тупит
+    generateLines() {
+        const key = `${this.size}-${this.winReq}`;
+        if (this.cacheKey === key) return; // Используем кэш
 
-            // Если бот решил "тупить", делаем случайный ход
-            if (Math.random() < errorChance) {
-                const empty = this.getEmptyCells(board);
-                return empty[Math.floor(Math.random() * empty.length)];
-            }
+        this.linesCache = [];
+        const s = this.size;
+        const w = this.winReq;
 
-            // 2. Хардкор режим: Minimax
-            // Определяем максимальную глубину просчета
-            let maxDepth = 100;
-            if (Settings.optimized) {
-                // Если включена оптимизация, режем глубину
-                if (Settings.size === 3) maxDepth = 9;
-                else if (Settings.size === 4) maxDepth = 3;
-                else maxDepth = 2; // Для 5x5 очень мелко
-            } else {
-                // Если оптимизация ВЫКЛ, бот думает дольше
-                if (Settings.size === 3) maxDepth = 9;
-                else if (Settings.size === 4) maxDepth = 5;
-                else maxDepth = 3;
-            }
-
-            // Первый ход бота на пустом поле - всегда центр (оптимизация)
-            const emptyCells = this.getEmptyCells(board);
-            if (emptyCells.length === board.length) {
-                return Math.floor(board.length / 2);
-            }
-            if (emptyCells.length === board.length - 1 && Settings.size >= 4) {
-                 // На больших полях если игрок сходил не в центр, бот занимает центр
-                 const center = Math.floor(board.length / 2);
-                 if (board[center] === null) return center;
-            }
-
-            return this.minimax(board, 0, true, -Infinity, Infinity, symbol, maxDepth).index;
-        },
-
-        minimax(board, depth, isMaximizing, alpha, beta, playerSymbol, maxDepthLimit) {
-            const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
-            
-            // Проверка терминальных состояний
-            if (this.checkWin(board, playerSymbol)) return { score: 1000 - depth };
-            if (this.checkWin(board, opponentSymbol)) return { score: -1000 + depth };
-            
-            const availSpots = this.getEmptyCells(board);
-            if (availSpots.length === 0 || depth >= maxDepthLimit) {
-                return { score: this.evaluateBoard(board, playerSymbol, opponentSymbol) };
-            }
-
-            if (isMaximizing) {
-                let bestScore = -Infinity;
-                let bestMove = -1;
-                for (let i = 0; i < availSpots.length; i++) {
-                    const idx = availSpots[i];
-                    board[idx] = playerSymbol;
-                    const result = this.minimax(board, depth + 1, false, alpha, beta, playerSymbol, maxDepthLimit);
-                    board[idx] = null;
-                    if (result.score > bestScore) {
-                        bestScore = result.score;
-                        bestMove = idx;
-                    }
-                    alpha = Math.max(alpha, bestScore);
-                    if (beta <= alpha) break;
-                }
-                return { score: bestScore, index: bestMove };
-            } else {
-                let bestScore = Infinity;
-                let bestMove = -1;
-                for (let i = 0; i < availSpots.length; i++) {
-                    const idx = availSpots[i];
-                    board[idx] = opponentSymbol;
-                    const result = this.minimax(board, depth + 1, true, alpha, beta, playerSymbol, maxDepthLimit);
-                    board[idx] = null;
-                    if (result.score < bestScore) {
-                        bestScore = result.score;
-                        bestMove = idx;
-                    }
-                    beta = Math.min(beta, bestScore);
-                    if (beta <= alpha) break;
-                }
-                return { score: bestScore, index: bestMove };
-            }
-        },
-
-        getEmptyCells(board) {
-            const cells = [];
-            for (let i = 0; i < board.length; i++) {
-                if (board[i] === null) cells.push(i);
-            }
-            return cells;
-        },
-
-        // Эвристическая оценка (когда не дошли до конца игры)
-        evaluateBoard(board, player, opponent) {
-            let score = 0;
-            const lines = getAllLines(Settings.size, Settings.winLength);
-            
-            for (let line of lines) {
-                let pCount = 0;
-                let oCount = 0;
-                for (let idx of line) {
-                    if (board[idx] === player) pCount++;
-                    else if (board[idx] === opponent) oCount++;
-                }
-                if (pCount > 0 && oCount === 0) score += Math.pow(10, pCount);
-                if (oCount > 0 && pCount === 0) score -= Math.pow(10, oCount);
-            }
-            return score;
-        },
-
-        // Упрощенная проверка победы для AI (быстрая)
-        checkWin(board, sym) {
-            const lines = getAllLines(Settings.size, Settings.winLength);
-            for (let line of lines) {
-                if (line.every(idx => board[idx] === sym)) return true;
-            }
-            return false;
-        }
-    };
-
-    // --- Кэширование линий (оптимизация) ---
-    let cachedLines = [];
-    let lastCacheKey = '';
-
-    function getAllLines(size, winLen) {
-        const key = `${size}-${winLen}`;
-        if (lastCacheKey === key && cachedLines.length > 0) return cachedLines;
-
-        const lines = [];
+        // Генерация всех возможных выигрышных отрезков длиной winReq
         // Rows
-        for (let r = 0; r < size; r++) {
-            for (let c = 0; c <= size - winLen; c++) {
-                const line = [];
-                for (let k = 0; k < winLen; k++) line.push(r * size + c + k);
-                lines.push(line);
+        for (let r = 0; r < s; r++) {
+            for (let c = 0; c <= s - w; c++) {
+                let line = [];
+                for (let k = 0; k < w; k++) line.push(r * s + c + k);
+                this.linesCache.push(line);
             }
         }
         // Cols
-        for (let c = 0; c < size; c++) {
-            for (let r = 0; r <= size - winLen; r++) {
-                const line = [];
-                for (let k = 0; k < winLen; k++) line.push((r + k) * size + c);
-                lines.push(line);
+        for (let c = 0; c < s; c++) {
+            for (let r = 0; r <= s - w; r++) {
+                let line = [];
+                for (let k = 0; k < w; k++) line.push((r + k) * s + c);
+                this.linesCache.push(line);
             }
         }
         // Diagonals
-        for (let r = 0; r <= size - winLen; r++) {
-            for (let c = 0; c <= size - winLen; c++) {
-                const line = [];
-                for (let k = 0; k < winLen; k++) line.push((r + k) * size + c + k);
-                lines.push(line);
+        for (let r = 0; r <= s - w; r++) {
+            for (let c = 0; c <= s - w; c++) {
+                let line = [];
+                for (let k = 0; k < w; k++) line.push((r + k) * s + c + k);
+                this.linesCache.push(line);
             }
         }
         // Anti-Diagonals
-        for (let r = 0; r <= size - winLen; r++) {
-            for (let c = winLen - 1; c < size; c++) {
-                const line = [];
-                for (let k = 0; k < winLen; k++) line.push((r + k) * size + c - k);
-                lines.push(line);
+        for (let r = 0; r <= s - w; r++) {
+            for (let c = w - 1; c < s; c++) {
+                let line = [];
+                for (let k = 0; k < w; k++) line.push((r + k) * s + c - k);
+                this.linesCache.push(line);
             }
         }
+        this.cacheKey = key;
+    },
 
-        lastCacheKey = key;
-        cachedLines = lines;
-        return lines;
+    move(idx, sym) {
+        if (!this.active || this.board[idx]) return null;
+        this.board[idx] = sym;
+        const winLine = this.checkWin(sym);
+        
+        if (winLine) {
+            this.active = false;
+            return { result: 'win', line: winLine };
+        } else if (!this.board.includes(null)) {
+            this.active = false;
+            return { result: 'draw' };
+        }
+        
+        this.turn = this.turn === 'X' ? 'O' : 'X';
+        return { result: 'continue' };
+    },
+
+    checkWin(sym) {
+        for (let line of this.linesCache) {
+            if (line.every(i => this.board[i] === sym)) return line;
+        }
+        return null;
     }
+};
 
-    // --- UI Logic ---
-    const UI = {
-        init() {
-            this.setupListeners();
-            this.renderEmptyBoard();
-        },
+/**
+ * AI BRAIN (EVOLVED)
+ */
+const AI = {
+    getBestMove(board, botSym, difficulty) {
+        const playerSym = botSym === 'X' ? 'O' : 'X';
+        const emptyIndices = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
 
-        setupListeners() {
-            // Кнопки настроек
-            document.querySelectorAll('.toggle-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const group = btn.parentElement;
-                    group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    this.updateSettings();
-                });
-            });
+        // 1. Дебют (Разнообразие для уровня "БОГ")
+        if (emptyIndices.length === board.length && difficulty === 'hard') {
+            return this.getOpeningMove(Engine.size);
+        }
+        
+        // 2. Уровень "Глупый" (Рандом с шансом на ошибку)
+        if (difficulty === 'easy') {
+            if (Math.random() > 0.3) return this.randomMove(emptyIndices); // 70% рандом
+            // 30% пытается думать (идет в логику ниже)
+        }
 
-            // Галочка оптимизации
-            document.getElementById('opt-toggle').addEventListener('change', this.updateSettings.bind(this));
+        // 3. CRITICAL EYE: Проверка мгновенных угроз (Фикс для 4х4/5х5)
+        // Сначала ищем: "Могу я выиграть прямо сейчас?"
+        let winMove = this.findCriticalMove(board, botSym, emptyIndices);
+        if (winMove !== -1) return winMove;
 
-            // Кнопка Старт
-            document.getElementById('start-btn').addEventListener('click', () => this.startGame());
-
-            // Кнопка Подсказка
-            document.getElementById('hint-btn').addEventListener('click', () => this.showHint());
-        },
-
-        updateSettings() {
-            Settings.size = parseInt(document.querySelector('#size-options .active').dataset.value);
-            Settings.winLength = parseInt(document.querySelector('#win-options .active').dataset.value);
-            Settings.difficulty = document.querySelector('#diff-options .active').dataset.value;
-            Settings.userSymbol = document.querySelector('#symbol-options .active').dataset.value;
-            Settings.botSymbol = Settings.userSymbol === 'X' ? 'O' : 'X';
-            Settings.starter = document.querySelector('#starter-options .active').dataset.value;
-            Settings.optimized = document.getElementById('opt-toggle').checked;
-
-            // Валидация: WinLength не может быть больше Size
-            if (Settings.winLength > Settings.size) {
-                // Если условие победы больше поля, сбрасываем на макс. возможное
-                Settings.winLength = Settings.size;
-                // Визуальное обновление кнопок
-                document.querySelectorAll('#win-options .toggle-btn').forEach(b => {
-                    b.classList.remove('active');
-                    if(parseInt(b.dataset.value) === Settings.size) b.classList.add('active');
-                });
+        // Потом ищем: "Может ли враг выиграть следующим ходом?"
+        let blockMove = this.findCriticalMove(board, playerSym, emptyIndices);
+        if (blockMove !== -1) {
+            // Если "Средний" уровень, есть 30% шанс пропустить блок (ошибка)
+            if (difficulty === 'medium' && Math.random() < 0.3) {
+                 return this.randomMove(emptyIndices);
             }
+            return blockMove;
+        }
 
-            // Обновляем CSS Grid
-            document.documentElement.style.setProperty('--grid-size', Settings.size);
+        // 4. Если нет мгновенных угроз, запускаем Minimax (только для Hard/Medium)
+        if (difficulty === 'easy') return this.randomMove(emptyIndices);
+        
+        // Оптимизация глубины
+        let maxDepth = (Engine.size === 3) ? 9 : (Engine.size === 4) ? 3 : 2;
+        
+        return this.minimax(board, 0, true, -Infinity, Infinity, botSym, playerSym, maxDepth).index;
+    },
+
+    // Разнообразие первых ходов
+    getOpeningMove(size) {
+        const center = Math.floor((size * size) / 2);
+        const corners = [0, size-1, size*(size-1), (size*size)-1];
+        
+        const roll = Math.random();
+        // 60% Центр (математически лучше)
+        if (roll < 0.6) return center; 
+        // 30% Угол (острая игра)
+        if (roll < 0.9) return corners[Math.floor(Math.random() * corners.length)];
+        // 10% Рандом (хаос)
+        return Math.floor(Math.random() * (size * size));
+    },
+
+    // Поиск критического хода (победа или блок)
+    findCriticalMove(board, sym, empties) {
+        // Проходим по всем выигрышным линиям
+        // Если в линии (WinReq - 1) символов == sym и 1 пустая клетка -> это критический ход
+        for (let line of Engine.linesCache) {
+            let countSym = 0;
+            let emptyIdx = -1;
             
-            // Если игра не идет, перерисовываем пустую доску
-            if (!GameState.isActive) {
-                this.renderEmptyBoard();
-            }
-        },
-
-        renderEmptyBoard() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            boardEl.classList.remove('disabled');
-            const total = Settings.size * Settings.size;
-            
-            for(let i=0; i<total; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.dataset.index = i;
-                boardEl.appendChild(cell);
-            }
-            document.getElementById('status').textContent = 'Нажми СТАРТ';
-            document.getElementById('status').style.color = '#e2e8f0';
-        },
-
-        startGame() {
-            // Считываем настройки в последний раз перед стартом
-            this.updateSettings();
-
-            // Инициализация состояния
-            GameState.size = Settings.size;
-            GameState.winLength = Settings.winLength;
-            GameState.board = Array(Settings.size * Settings.size).fill(null);
-            GameState.isActive = true;
-            GameState.winner = null;
-            GameState.winLine = [];
-            
-            // Кто ходит первым?
-            GameState.currentPlayer = (Settings.starter === 'player') 
-                ? Settings.userSymbol 
-                : Settings.botSymbol;
-
-            this.drawBoard();
-            this.updateStatus();
-
-            // Если начинает бот
-            if (Settings.starter === 'bot') {
-                this.processBotTurn();
-            }
-        },
-
-        drawBoard() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            boardEl.classList.remove('disabled');
-            
-            GameState.board.forEach((cell, i) => {
-                const el = document.createElement('div');
-                el.className = 'cell';
-                if (cell) el.classList.add(cell.toLowerCase());
-                el.textContent = cell || '';
-                
-                // Клик
-                el.addEventListener('click', () => this.handleCellClick(i));
-                
-                // Подсветка победы
-                if (GameState.winLine.includes(i)) el.classList.add('winner');
-                
-                boardEl.appendChild(el);
-            });
-        },
-
-        handleCellClick(index) {
-            if (!GameState.isActive) return;
-            // Проверка: ход игрока?
-            if (GameState.currentPlayer !== Settings.userSymbol) return;
-            // Клетка свободна?
-            if (GameState.board[index] !== null) return;
-
-            // Ход игрока
-            this.makeMove(index, Settings.userSymbol);
-
-            // Если игра продолжается, запускаем бота
-            if (GameState.isActive) {
-                this.processBotTurn();
-            }
-        },
-
-        makeMove(index, symbol) {
-            GameState.board[index] = symbol;
-            
-            // Проверка победы
-            if (this.checkWin(index, symbol)) {
-                GameState.isActive = false;
-                GameState.winner = symbol;
-            } else if (!GameState.board.includes(null)) {
-                GameState.isActive = false;
-                GameState.winner = 'draw';
-            } else {
-                GameState.currentPlayer = (symbol === 'X') ? 'O' : 'X';
-            }
-
-            this.drawBoard();
-            this.updateStatus();
-        },
-
-        checkWin(lastIdx, symbol) {
-            const lines = getAllLines(GameState.size, GameState.winLength);
-            for (let line of lines) {
-                if (line.every(i => GameState.board[i] === symbol)) {
-                    GameState.winLine = line;
-                    return true;
+            for (let idx of line) {
+                if (board[idx] === sym) countSym++;
+                else if (board[idx] === null) emptyIdx = idx;
+                else { // Там чужой символ
+                    countSym = -999; 
+                    break; 
                 }
             }
-            return false;
-        },
 
-        async processBotTurn() {
-            const boardEl = document.getElementById('board');
-            boardEl.classList.add('disabled'); // Блок кликов
-            document.getElementById('status').textContent = 'Бот думает...';
-            document.getElementById('status').style.color = '#94a3b8';
-
-            // Небольшая задержка для реализма
-            await new Promise(r => setTimeout(r, 400));
-
-            // Запускаем вычисления (через setTimeout чтобы UI отрисовался)
-            setTimeout(() => {
-                const move = AI.getBestMove([...GameState.board], Settings.botSymbol);
-                
-                if (move !== -1 && GameState.board[move] === null) {
-                    this.makeMove(move, Settings.botSymbol);
-                }
-
-                if (GameState.isActive) {
-                    boardEl.classList.remove('disabled');
-                }
-            }, 10);
-        },
-
-        updateStatus() {
-            const statusEl = document.getElementById('status');
-            if (GameState.isActive) {
-                if (GameState.currentPlayer === Settings.userSymbol) {
-                    statusEl.textContent = `Ваш ход (${Settings.userSymbol})`;
-                    statusEl.style.color = '#38bdf8';
-                } else {
-                    statusEl.textContent = `Ход бота (${Settings.botSymbol})`;
-                    statusEl.style.color = '#94a3b8';
-                }
-            } else {
-                if (GameState.winner === 'draw') {
-                    statusEl.textContent = 'Ничья!';
-                    statusEl.style.color = '#fff';
-                } else {
-                    const youWon = GameState.winner === Settings.userSymbol;
-                    statusEl.textContent = youWon ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ';
-                    statusEl.style.color = youWon ? '#38bdf8' : '#f472b6';
-                }
-            }
-        },
-
-        showHint() {
-            if (!GameState.isActive || GameState.currentPlayer !== Settings.userSymbol) return;
-
-            // Используем AI для поиска хода за игрока
-            // Для подсказки всегда используем Hard (но с учетом текущей настройки оптимизации)
-            const savedDiff = Settings.difficulty;
-            Settings.difficulty = 'hard'; // Временно включаем мозг на максимум
-            
-            const hintMove = AI.getBestMove([...GameState.board], Settings.userSymbol);
-            
-            Settings.difficulty = savedDiff; // Возвращаем настройку
-
-            if (hintMove !== undefined && hintMove !== -1) {
-                const cells = document.querySelectorAll('.cell');
-                cells[hintMove].classList.add('hint');
-                setTimeout(() => cells[hintMove].classList.remove('hint'), 1500);
+            if (countSym === Engine.winReq - 1 && emptyIdx !== -1) {
+                return emptyIdx;
             }
         }
-    };
+        return -1;
+    },
 
-    // Старт
-    UI.init();
+    minimax(board, depth, isMax, alpha, beta, botSym, playerSym, maxDepth) {
+        // Терминальные состояния эмуляции
+        // Мы используем быстрый чек через findCriticalMove "наоборот" или базовую логику
+        // Но здесь упростим: проверяем победу через Engine lines
+        
+        // ВНИМАНИЕ: Проверять победу на каждом шаге Minimax дорого. 
+        // Используем эвристику если глубина 0, иначе рекурсия
+        
+        // Базовые случаи
+        // (Примечание: в реальном minimax нужно проверять победу предыдущего хода.
+        // Здесь для краткости кода мы оцениваем позицию)
+        
+        const empties = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+        if (empties.length === 0 || depth >= maxDepth) {
+            return { score: this.evaluate(board, botSym, playerSym) };
+        }
+
+        if (isMax) {
+            let bestScore = -Infinity;
+            let bestMove = empties[0];
+            
+            for (let idx of empties) {
+                board[idx] = botSym;
+                // Мгновенная проверка победы (оптимизация)
+                if (this.checkWinFast(board, botSym)) {
+                    board[idx] = null;
+                    return { score: 10000 - depth, index: idx };
+                }
+                
+                let score = this.minimax(board, depth + 1, false, alpha, beta, botSym, playerSym, maxDepth).score;
+                board[idx] = null;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = idx;
+                }
+                alpha = Math.max(alpha, bestScore);
+                if (beta <= alpha) break;
+            }
+            return { score: bestScore, index: bestMove };
+        } else {
+            let bestScore = Infinity;
+            let bestMove = empties[0];
+            
+            for (let idx of empties) {
+                board[idx] = playerSym;
+                if (this.checkWinFast(board, playerSym)) {
+                    board[idx] = null;
+                    return { score: -10000 + depth, index: idx };
+                }
+                
+                let score = this.minimax(board, depth + 1, true, alpha, beta, botSym, playerSym, maxDepth).score;
+                board[idx] = null;
+                
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestMove = idx;
+                }
+                beta = Math.min(beta, bestScore);
+                if (beta <= alpha) break;
+            }
+            return { score: bestScore, index: bestMove };
+        }
+    },
+
+    checkWinFast(board, sym) {
+        for (let line of Engine.linesCache) {
+            let win = true;
+            for (let i of line) {
+                if (board[i] !== sym) { win = false; break; }
+            }
+            if (win) return true;
+        }
+        return false;
+    },
+
+    evaluate(board, bot, player) {
+        let score = 0;
+        for (let line of Engine.linesCache) {
+            let bCount = 0;
+            let pCount = 0;
+            for (let idx of line) {
+                if (board[idx] === bot) bCount++;
+                else if (board[idx] === player) pCount++;
+            }
+            // Эвристика: Линии, где только мы
+            if (pCount === 0 && bCount > 0) score += Math.pow(10, bCount);
+            // Линии, где только враг (опасно!)
+            if (bCount === 0 && pCount > 0) score -= Math.pow(10, pCount + 1); // Приоритет защите
+        }
+        return score;
+    },
+
+    randomMove(indices) {
+        return indices[Math.floor(Math.random() * indices.length)];
+    }
+};
+
+/**
+ * UI & CONTROLLER
+ */
+const App = {
+    settings: {
+        size: 3,
+        win: 3,
+        diff: 'hard',
+        side: 'X',
+        start: 'player'
+    },
+    
+    init() {
+        this.bindEvents();
+        this.updateBoardLayout(); // Первый рендер
+    },
+
+    bindEvents() {
+        // Toggles
+        document.querySelectorAll('.t-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const group = btn.parentNode;
+                group.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Parse value
+                const val = btn.dataset.v;
+                const key = group.id.split('-')[1]; // size, win, diff...
+                this.settings[key] = isNaN(val) ? val : parseInt(val);
+
+                // Validation
+                if (this.settings.win > this.settings.size) {
+                    this.settings.win = this.settings.size;
+                    this.syncUI();
+                }
+                
+                // Если меняем поле - сбрасываем игру визуально
+                if (key === 'size') {
+                    this.updateBoardLayout();
+                    this.setStatus('Нажми СТАРТ');
+                }
+            });
+        });
+
+        document.getElementById('btn-start').addEventListener('click', () => this.startGame());
+        document.getElementById('btn-hint').addEventListener('click', () => this.showHint());
+        
+        // Свернуть/развернуть настройки
+        const setPanel = document.getElementById('settings');
+        const togBtn = document.getElementById('toggle-settings');
+        togBtn.addEventListener('click', () => {
+            setPanel.classList.toggle('collapsed');
+            togBtn.textContent = setPanel.classList.contains('collapsed') ? '⚙️ Настройки' : '🔼 Скрыть';
+        });
+    },
+
+    syncUI() {
+        // Обновляем кнопки win если size изменился
+        document.querySelectorAll('#opt-win .t-btn').forEach(b => {
+            b.classList.remove('active');
+            if (parseInt(b.dataset.v) === this.settings.win) b.classList.add('active');
+            // Скрыть невозможные варианты
+            b.style.display = (parseInt(b.dataset.v) > this.settings.size) ? 'none' : 'block';
+        });
+    },
+
+    updateBoardLayout() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+        const size = this.settings.size;
+        
+        // CSS Grid Update
+        document.documentElement.style.setProperty('--grid-cols', size);
+        
+        // Font size Calc (Чтобы не прыгало)
+        // Базовый размер поля ~300-500px.
+        // Для 3x3 шрифт большой, для 5x5 меньше.
+        // Формула: (BoardWidth / Size) * 0.6
+        // Но BoardWidth резинов. Используем относительную единицу.
+        // 100% ширины клетки.
+        const fontSize = size === 3 ? '4rem' : size === 4 ? '2.5rem' : '1.8rem';
+        
+        // Mobile adjustment calc happens in CSS via calc or updated here
+        // Проще задать в CSS переменную стиля
+        board.style.setProperty('--font-size', fontSize);
+
+        for (let i = 0; i < size * size; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.i = i;
+            cell.innerHTML = `<span></span>`; // Span for centering logic
+            cell.addEventListener('click', () => this.handleInput(i));
+            board.appendChild(cell);
+        }
+    },
+
+    setStatus(msg, color = '#cbd5e1') {
+        const el = document.getElementById('status');
+        el.textContent = msg;
+        el.style.color = color;
+    },
+
+    startGame() {
+        // Collapse settings on start for better view
+        document.getElementById('settings').classList.add('collapsed');
+        document.getElementById('toggle-settings').textContent = '⚙️ Настройки';
+
+        Engine.init(this.settings.size, this.settings.win);
+        this.updateBoardLayout(); // Clean board
+        
+        const playerStarts = this.settings.start === 'player';
+        // Логика хода:
+        // Если Player выбрал X и Start Player -> Engine Turn X (совпадает)
+        // Если Player выбрал O и Start Player -> Player играет O. Значит Engine Turn O.
+        
+        // Упрощение: Engine.turn всегда указывает на СИМВОЛ, который сейчас ходит.
+        // Кто ходит первым?
+        Engine.turn = playerStarts ? this.settings.side : (this.settings.side === 'X' ? 'O' : 'X');
+        
+        this.renderTurnInfo();
+
+        if (!playerStarts) {
+            this.botTurn();
+        }
+    },
+
+    renderTurnInfo() {
+        if (!Engine.active) return;
+        const isMyTurn = Engine.turn === this.settings.side;
+        if (isMyTurn) {
+            this.setStatus(`Ваш ход (${this.settings.side})`, '#38bdf8');
+        } else {
+            this.setStatus(`Думает бот...`, '#94a3b8');
+        }
+    },
+
+    handleInput(idx) {
+        if (!Engine.active) return;
+        // Мой ход?
+        if (Engine.turn !== this.settings.side) return;
+        
+        const res = Engine.move(idx, this.settings.side);
+        if (!res) return; // Занято
+
+        this.updateCell(idx, this.settings.side);
+        
+        if (res.result === 'continue') {
+            this.botTurn();
+        } else {
+            this.endGame(res);
+        }
+    },
+
+    updateCell(idx, sym) {
+        const cell = document.getElementById('board').children[idx];
+        cell.className = `cell ${sym.toLowerCase()}`;
+        cell.querySelector('span').textContent = sym;
+    },
+
+    async botTurn() {
+        const boardEl = document.getElementById('board');
+        boardEl.classList.add('locked');
+        this.renderTurnInfo();
+
+        // Имитация размышления (чтобы видеть анимацию)
+        await new Promise(r => setTimeout(r, 400));
+        
+        // Выносим тяжелые вычисления из потока рендера
+        setTimeout(() => {
+            const botSym = this.settings.side === 'X' ? 'O' : 'X';
+            const idx = AI.getBestMove([...Engine.board], botSym, this.settings.diff);
+            
+            if (idx !== -1) {
+                const res = Engine.move(idx, botSym);
+                this.updateCell(idx, botSym);
+                
+                if (res.result !== 'continue') {
+                    this.endGame(res);
+                } else {
+                    this.renderTurnInfo();
+                }
+            }
+            boardEl.classList.remove('locked');
+        }, 10);
+    },
+
+    endGame(res) {
+        const boardEl = document.getElementById('board');
+        boardEl.classList.remove('locked');
+        
+        if (res.result === 'draw') {
+            this.setStatus('НИЧЬЯ', '#fff');
+        } else {
+            const isWin = Engine.board[res.line[0]] === this.settings.side;
+            this.setStatus(isWin ? 'ПОБЕДА!' : 'ПОТРАЧЕНО', isWin ? '#38bdf8' : '#f43f5e');
+            
+            // Highlight
+            res.line.forEach(i => boardEl.children[i].classList.add('win'));
+        }
+        
+        // Auto open settings after delay
+        setTimeout(() => {
+            document.getElementById('toggle-settings').style.display = 'block';
+        }, 1000);
+    },
+
+    showHint() {
+        if (!Engine.active || Engine.turn !== this.settings.side) return;
+        
+        const hintIdx = AI.getBestMove([...Engine.board], this.settings.side, 'hard');
+        if (hintIdx !== -1) {
+            const cell = document.getElementById('board').children[hintIdx];
+            cell.classList.add('hint');
+            setTimeout(() => cell.classList.remove('hint'), 1000);
+        }
+    }
+};
+
+// Start
+App.init();
+
 </script>
-
 </body>
 </html>
