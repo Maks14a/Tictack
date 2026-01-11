@@ -157,56 +157,15 @@
     <div class="status-bar" id="status">ГОТОВ К ТРУДУ</div>
 
     <div class="settings-container" id="menu">
-        <div class="row">
-            <span class="row-label">ПОЛЕ</span>
-            <div class="group" id="set-size">
-                <button class="opt-btn active" onclick="config('size', 3, this)">3x3</button>
-                <button class="opt-btn" onclick="config('size', 4, this)">4x4</button>
-                <button class="opt-btn" onclick="config('size', 5, this)">5x5</button>
-            </div>
-        </div>
-        <div class="row">
-            <span class="row-label">УСЛОВИЕ</span>
-            <div class="group" id="set-win">
-                <button class="opt-btn active" data-v="3" onclick="config('win', 3, this)">3</button>
-                <button class="opt-btn" data-v="4" onclick="config('win', 4, this)">4</button>
-                <button class="opt-btn" data-v="5" onclick="config('win', 5, this)">5</button>
-            </div>
-        </div>
-        <div class="row">
-            <span class="row-label">МОЗГИ</span>
-            <div class="group" id="set-diff">
-                <button class="opt-btn" onclick="config('diff', 'easy', this)">ИЗИ</button>
-                <button class="opt-btn" onclick="config('diff', 'norm', this)">НОРМ</button>
-                <button class="opt-btn active" onclick="config('diff', 'god', this)">БОГ</button>
-            </div>
-        </div>
-        <div class="row">
-            <span class="row-label">РЕЖИМ</span>
-            <div class="group" id="set-pro">
-                <button class="opt-btn active" onclick="config('pro', false, this)">ВЫКЛ</button>
-                <button class="opt-btn" onclick="config('pro', true, this)">PRO</button>
-            </div>
-        </div>
-        <div class="row">
-            <span class="row-label">Я ИГРАЮ ЗА</span>
-            <div class="group" id="set-side">
-                <button class="opt-btn active" onclick="config('playerSide', 'X', this)">X</button>
-                <button class="opt-btn" onclick="config('playerSide', 'O', this)">O</button>
-            </div>
-        </div>
-        <div class="row">
-            <span class="row-label">ХОДИТ</span>
-            <div class="group" id="set-start">
-                <button class="opt-btn active" onclick="config('start', 'p', this)">Я</button>
-                <button class="opt-btn" onclick="config('start', 'b', this)">БОТ</button>
-            </div>
-        </div>
+        <div class="row"><span class="row-label">ПОЛЕ</span><div class="group" id="set-size"><button class="opt-btn active" onclick="config('size', 3, this)">3x3</button><button class="opt-btn" onclick="config('size', 4, this)">4x4</button><button class="opt-btn" onclick="config('size', 5, this)">5x5</button></div></div>
+        <div class="row"><span class="row-label">УСЛОВИЕ</span><div class="group" id="set-win"><button class="opt-btn active" data-v="3" onclick="config('win', 3, this)">3</button><button class="opt-btn" data-v="4" onclick="config('win', 4, this)">4</button><button class="opt-btn" data-v="5" onclick="config('win', 5, this)">5</button></div></div>
+        <div class="row"><span class="row-label">МОЗГИ</span><div class="group" id="set-diff"><button class="opt-btn" onclick="config('diff', 'easy', this)">ИЗИ</button><button class="opt-btn" onclick="config('diff', 'norm', this)">НОРМ</button><button class="opt-btn active" onclick="config('diff', 'god', this)">БОГ</button></div></div>
+        <div class="row"><span class="row-label">РЕЖИМ</span><div class="group" id="set-pro"><button class="opt-btn active" onclick="config('pro', false, this)">ВЫКЛ</button><button class="opt-btn" onclick="config('pro', true, this)">PRO</button></div></div>
+        <div class="row"><span class="row-label">Я ЗА</span><div class="group" id="set-side"><button class="opt-btn active" onclick="config('playerSide', 'X', this)">X</button><button class="opt-btn" onclick="config('playerSide', 'O', this)">O</button></div></div>
+        <div class="row"><span class="row-label">ХОДИТ</span><div class="group" id="set-start"><button class="opt-btn active" onclick="config('start', 'p', this)">Я</button><button class="opt-btn" onclick="config('start', 'b', this)">БОТ</button></div></div>
     </div>
 
-    <div class="board-frame">
-        <div class="board-grid" id="board"></div>
-    </div>
+    <div class="board-frame"><div class="board-grid" id="board"></div></div>
 
     <div class="footer-btns">
         <button class="btn btn-side" onclick="toggleMenu()">⚙️</button>
@@ -218,13 +177,13 @@
 
 <script>
     let settings = { size: 3, win: 3, diff: 'god', pro: false, playerSide: 'X', start: 'p' };
-    let session = { board: [], active: false, turn: 'X', botSide: 'O', winLines: [], history: [] };
+    let session = { board: [], active: false, turn: 'X', botSide: 'O', winLines: [], history: [], tactic: 'random' };
+    let botTimer;
 
     function customSettings() {
         let n = prompt("Размер поля (N):", settings.size); if(!n) return;
         let w = prompt("Условие победы:", settings.win); if(!w) return;
         settings.size = parseInt(n); settings.win = parseInt(w);
-        document.querySelectorAll('#set-size .opt-btn, #set-win .opt-btn').forEach(b => b.classList.remove('active'));
         drawEmpty(); setStatus(`РЕЖИМ: ${n}x${n} (${w})`);
     }
 
@@ -232,11 +191,7 @@
         settings[key] = val;
         [...el.parentElement.children].forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        if (key === 'size') {
-            const winBtns = document.getElementById('set-win').children;
-            [...winBtns].forEach(b => { b.disabled = parseInt(b.dataset.v) > settings.size; });
-            drawEmpty();
-        }
+        if (key === 'size') drawEmpty();
     }
 
     function toggleMenu() { document.getElementById('menu').classList.toggle('hidden'); }
@@ -244,78 +199,58 @@
     function drawEmpty() {
         const b = document.getElementById('board'); b.innerHTML = '';
         b.style.setProperty('--cols', settings.size);
-        let fontSize = settings.size > 8 ? 1 : settings.size > 5 ? 1.5 : settings.size > 3 ? 2.5 : 3.5;
-        b.style.setProperty('--fs', fontSize + 'rem');
+        let fs = settings.size > 8 ? 1 : settings.size > 5 ? 1.5 : settings.size > 3 ? 2.5 : 3.5;
+        b.style.setProperty('--fs', fs + 'rem');
         for(let i=0; i<settings.size*settings.size; i++) {
             const c = document.createElement('div'); c.className = 'cell';
             c.innerHTML = '<span></span>'; b.appendChild(c);
         }
     }
 
-    // Добавь эту переменную в начало секции <script> к остальным
-let botTimer; 
+    function initGame() {
+        clearTimeout(botTimer);
+        session.active = true; session.history = [];
+        session.board = Array(settings.size * settings.size).fill(null);
+        session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
+        session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
+        session.winLines = generateLines(settings.size, settings.win);
+        // Выбор случайной тактики на игру
+        const tactics = ['center', 'corners', 'random'];
+        session.tactic = tactics[Math.floor(Math.random() * tactics.length)];
+        
+        document.getElementById('menu').classList.add('hidden');
+        render(); checkTurn();
+    }
 
-function initGame() {
-    clearTimeout(botTimer); // Очищаем старые таймеры при перезапуске
-    session.active = true;
-    session.history = [];
-    session.board = Array(settings.size * settings.size).fill(null);
-    session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
-    session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
-    session.winLines = generateLines(settings.size, settings.win);
-    document.getElementById('menu').classList.add('hidden');
-    render();
-    checkTurn();
-}
+    function undoMove() {
+        clearTimeout(botTimer);
+        if (session.history.length === 0) return;
+        const lastIdx = session.history[session.history.length - 1];
+        let count = (session.board[lastIdx] === session.botSide) ? 2 : 1;
+        for(let i = 0; i < count; i++) {
+            if (session.history.length > 0) {
+                let idx = session.history.pop();
+                session.board[idx] = null;
+            }
+        }
+        session.active = true;
+        const xC = session.board.filter(s => s === 'X').length;
+        const oC = session.board.filter(s => s === 'O').length;
+        session.turn = (xC === oC) ? 'X' : 'O';
+        render(); checkTurn();
+    }
 
-function undoMove() {
-    clearTimeout(botTimer); // Останавливаем мысли бота
-    
-    if (session.history.length === 0) return;
-
-    // Определяем, сколько символов стирать.
-    // Если последний ход в истории сделал БОТ, значит стираем 2 хода (бота и твой).
-    // Если последний ход сделал ТЫ (и бот еще не ответил), стираем только 1 твой ход.
-    const lastIdx = session.history[session.history.length - 1];
-    const lastSymbol = session.board[lastIdx];
-    let count = (lastSymbol === session.botSide) ? 2 : 1;
-
-    for(let i = 0; i < count; i++) {
-        if (session.history.length > 0) {
-            let idx = session.history.pop();
-            session.board[idx] = null;
-            // Возвращаем очередь хода тому, чей символ мы только что стерли
-            session.turn = (session.board.filter(x => x).length % 2 === 0) 
-                ? (settings.start === 'p' ? settings.playerSide : session.botSide)
-                : (settings.start === 'p' ? session.botSide : settings.playerSide);
+    function checkTurn() {
+        if (!session.active) return;
+        if (session.turn === session.botSide) {
+            setStatus(`БОТ (${session.tactic}) ДУМАЕТ...`);
+            document.getElementById('board').classList.add('locked');
+            botTimer = setTimeout(botMove, 600);
+        } else {
+            setStatus("ТВОЙ ХОД (" + session.turn + ")");
+            document.getElementById('board').classList.remove('locked');
         }
     }
-
-    // ВАЖНО: После отката игра всегда снова активна (снимаем блокировку победы)
-    session.active = true; 
-    render();
-    
-    // Специально для отката: принудительно пересчитываем turn на основе количества знаков на поле
-    const xCount = session.board.filter(s => s === 'X').length;
-    const oCount = session.board.filter(s => s === 'O').length;
-    session.turn = (xCount === oCount) ? 'X' : 'O';
-
-    checkTurn();
-    }
-
-function checkTurn() {
-    if (!session.active) return;
-    if (session.turn === session.botSide) {
-        setStatus("БОТ ДУМАЕТ...");
-        document.getElementById('board').classList.add('locked');
-        // Сохраняем ссылку на таймер
-        botTimer = setTimeout(botMove, 600); 
-    } else {
-        setStatus("ТВОЙ ХОД (" + session.turn + ")");
-        document.getElementById('board').classList.remove('locked');
-    }
-}
-
 
     function render() {
         const b = document.getElementById('board');
@@ -353,55 +288,71 @@ function checkTurn() {
     }
 
     function findBestLogic() {
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = session.turn;
-                if(checkWin(b, session.turn)) return i;
-            }
-        }
-        let opp = (session.turn === 'X') ? 'O' : 'X';
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = opp;
-                if(checkWin(b, opp)) return i;
-            }
-        }
+        // Базовая логика для NORM: атака и защита
+        let win = findWinMove(session.turn); if (win !== null) return win;
+        let block = findWinMove(settings.playerSide); if (block !== null) return block;
         return randomEmpty();
     }
 
+    function findWinMove(sym) {
+        for(let i=0; i<session.board.length; i++) {
+            if(!session.board[i]) {
+                let b = [...session.board]; b[i] = sym;
+                if(checkWin(b, sym)) return i;
+            }
+        }
+        return null;
+    }
+
     function findGodMove() {
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = session.turn;
-                if(checkWin(b, session.turn)) return i;
-            }
+        // 1. Сначала проверяем моментальную победу или блок
+        let win = findWinMove(session.turn); if (win !== null) return win;
+        let block = findWinMove(settings.playerSide); if (block !== null) return block;
+
+        // 2. Если поле 3х3 и это начало - юзаем минимакс
+        if (settings.size === 3 && session.board.filter(x => x).length < 2) {
+            return minimax(session.board, 0, true, -Infinity, Infinity).index;
         }
-        let opp = (session.turn === 'X') ? 'O' : 'X';
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = opp;
-                if(checkWin(b, opp)) return i;
-            }
-        }
-        if (settings.size === 3) return minimax(session.board, 0, true, -Infinity, Infinity).index;
+
+        // 3. Система весов с учетом тактики
         let weights = Array(session.board.length).fill(0);
+        let center = Math.floor(settings.size / 2);
+
         session.winLines.forEach(line => {
             let me = line.filter(idx => session.board[idx] === session.turn).length;
-            let op = line.filter(idx => session.board[idx] === opp).length;
+            let op = line.filter(idx => session.board[idx] === settings.playerSide).length;
             if (me > 0 && op > 0) return;
-            line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + me + op * 1.1); });
+            
+            line.forEach(idx => {
+                if (!session.board[idx]) {
+                    let score = 1 + (me * 2) + (op * 1.5);
+                    
+                    // Учет тактики
+                    if (session.tactic === 'center') {
+                        let dist = Math.abs(Math.floor(idx/settings.size) - center) + Math.abs((idx%settings.size) - center);
+                        score += (settings.size - dist);
+                    } else if (session.tactic === 'corners') {
+                        let isCorner = [0, settings.size-1, settings.size*(settings.size-1), settings.size*settings.size-1].includes(idx);
+                        if (isCorner) score += 3;
+                    }
+                    
+                    weights[idx] += score + (Math.random() * 0.5); // Рандомная добавка для непредсказуемости
+                }
+            });
         });
+
         let maxW = -1, best = [];
         weights.forEach((w, i) => {
-            if (!session.board[i] && w > maxW) { maxW = w; best = [i]; }
-            else if (!session.board[i] && w === maxW) best.push(i);
+            if (session.board[i]) return;
+            if (w > maxW) { maxW = w; best = [i]; }
+            else if (Math.abs(w - maxW) < 0.1) best.push(i);
         });
-        return best.length ? best[Math.floor(Math.random() * best.length)] : randomEmpty();
+        return best[Math.floor(Math.random() * best.length)];
     }
 
     function minimax(board, depth, isMax, alpha, beta) {
         const avail = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-        const botS = session.turn; const plS = (botS === 'X') ? 'O' : 'X';
+        const botS = session.botSide; const plS = settings.playerSide;
         if (checkWin(board, plS)) return { score: -10 + depth };
         if (checkWin(board, botS)) return { score: 10 - depth };
         if (avail.length === 0) return { score: 0 };
