@@ -133,15 +133,16 @@
         .cell.winner span { color: #020617; text-shadow: none; }
         .cell.hint { background: rgba(251, 191, 36, 0.2); border: 2px solid #fbbf24; }
 
-        .footer-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .footer-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         .btn {
             padding: 15px 5px; border: none; border-radius: 14px;
             font-weight: 900; cursor: pointer; text-transform: uppercase;
-            font-size: 0.8rem; transition: 0.2s;
+            font-size: 0.75rem; transition: 0.2s;
         }
         .btn-play { background: var(--primary); color: #020617; }
         .btn-side { background: #334155; color: white; }
         .btn-hint { background: #475569; color: #fbbf24; }
+        .btn-undo { background: #1e293b; color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }
         .locked { pointer-events: none; }
     </style>
 </head>
@@ -208,46 +209,38 @@
     </div>
 
     <div class="footer-btns">
-        <button class="btn btn-side" onclick="toggleMenu()">⚙️ ОПЦИИ</button>
+        <button class="btn btn-side" onclick="toggleMenu()">⚙️</button>
         <button class="btn btn-hint" onclick="getHint()">💡</button>
+        <button class="btn btn-undo" onclick="undoMove()">↩️</button>
         <button class="btn btn-play" onclick="initGame()">ИГРАТЬ</button>
     </div>
 </div>
 
 <script>
     let settings = { size: 3, win: 3, diff: 'god', pro: false, playerSide: 'X', start: 'p' };
-    let session = { board: [], active: false, turn: 'X', botSide: 'O', winLines: [] };
+    let session = { board: [], active: false, turn: 'X', botSide: 'O', winLines: [], history: [] };
 
     function customSettings() {
         let n = prompt("Введите размер поля (N):", settings.size);
         if(!n) return;
         let w = prompt("Сколько в ряд для победы?", settings.win);
         if(!w) return;
-        
         settings.size = parseInt(n);
         settings.win = parseInt(w);
-        
-        // Снимаем активность с кнопок стандартных размеров
         document.querySelectorAll('#set-size .opt-btn, #set-win .opt-btn').forEach(b => b.classList.remove('active'));
         drawEmpty();
-        setStatus(`РЕЖИМ: ${n}x${n} (ПОБЕДА: ${w})`);
+        setStatus(`${n}x${n} (ПОБЕДА: ${w})`);
     }
 
     function config(key, val, el) {
         settings[key] = val;
         [...el.parentElement.children].forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-
         if (key === 'size') {
             const winBtns = document.getElementById('set-win').children;
             [...winBtns].forEach(b => {
                 const v = parseInt(b.dataset.v);
                 b.disabled = v > settings.size;
-                if (v === settings.size && settings.win > settings.size) {
-                    settings.win = v;
-                    [...winBtns].forEach(x => x.classList.remove('active'));
-                    b.classList.add('active');
-                }
             });
             drawEmpty();
         }
@@ -259,13 +252,7 @@
         const b = document.getElementById('board');
         b.innerHTML = '';
         b.style.setProperty('--cols', settings.size);
-        
-        // Умный расчет шрифта: чем больше поле, тем меньше символы
-        let fontSize = 3.5;
-        if (settings.size > 3) fontSize = 2.5;
-        if (settings.size > 5) fontSize = 1.5;
-        if (settings.size > 8) fontSize = 1;
-        
+        let fontSize = settings.size > 8 ? 1 : settings.size > 5 ? 1.5 : settings.size > 3 ? 2.5 : 3.5;
         b.style.setProperty('--fs', fontSize + 'rem');
         for(let i=0; i<settings.size*settings.size; i++) {
             const c = document.createElement('div');
@@ -278,10 +265,21 @@
     function initGame() {
         session.active = true;
         session.board = Array(settings.size * settings.size).fill(null);
+        session.history = [];
         session.botSide = settings.playerSide === 'X' ? 'O' : 'X';
         session.turn = settings.start === 'p' ? settings.playerSide : session.botSide;
         session.winLines = generateLines(settings.size, settings.win);
         document.getElementById('menu').classList.add('hidden');
+        render();
+        checkTurn();
+    }
+
+    function undoMove() {
+        if (session.history.length === 0) return;
+        const lastIdx = session.history.pop();
+        session.board[lastIdx] = null;
+        session.turn = (session.turn === 'X') ? 'O' : 'X';
+        session.active = true; // Возвращаем игру в активное состояние при откате
         render();
         checkTurn();
     }
@@ -312,6 +310,7 @@
 
     function doMove(i, sym) {
         session.board[i] = sym;
+        session.history.push(i);
         render();
         const win = checkWin(session.board, sym);
         if (win) {
@@ -333,7 +332,7 @@
         if (!session.active) return;
         let idx = (settings.diff === 'god') ? findGodMove() : findBestLogic();
         if (settings.diff === 'easy' && Math.random() < 0.7) idx = randomEmpty();
-        doMove(idx, session.turn);
+        if (idx !== null) doMove(idx, session.turn);
     }
 
     function findBestLogic() {
@@ -367,29 +366,22 @@
                 if(checkWin(b, opp)) return i;
             }
         }
-
         if (settings.size === 3) return minimax(session.board, 0, true, -Infinity, Infinity).index;
         
-        if (settings.pro || settings.size > 3) {
-            let weights = Array(session.board.length).fill(0);
-            session.winLines.forEach(line => {
-                let me = line.filter(idx => session.board[idx] === session.turn).length;
-                let op = line.filter(idx => session.board[idx] === opp).length;
-                if (me > 0 && op > 0) return;
-                line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + me + op * 1.1); });
-            });
-            let maxW = -1, best = [];
-            weights.forEach((w, i) => {
-                if (session.board[i]) return;
-                if (w > maxW) { maxW = w; best = [i]; }
-                else if (w === maxW) best.push(i);
-            });
-            return best.length ? best[Math.floor(Math.random() * best.length)] : randomEmpty();
-        }
-
-        const center = Math.floor(session.board.length / 2);
-        if (!session.board[center]) return center;
-        return randomEmpty();
+        let weights = Array(session.board.length).fill(0);
+        session.winLines.forEach(line => {
+            let me = line.filter(idx => session.board[idx] === session.turn).length;
+            let op = line.filter(idx => session.board[idx] === opp).length;
+            if (me > 0 && op > 0) return;
+            line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + me + op * 1.1); });
+        });
+        let maxW = -1, best = [];
+        weights.forEach((w, i) => {
+            if (session.board[i]) return;
+            if (w > maxW) { maxW = w; best = [i]; }
+            else if (w === maxW) best.push(i);
+        });
+        return best.length ? best[Math.floor(Math.random() * best.length)] : randomEmpty();
     }
 
     function minimax(board, depth, isMax, alpha, beta) {
@@ -471,4 +463,3 @@
 </script>
 </body>
 </html>
-
