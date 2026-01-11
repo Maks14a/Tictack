@@ -337,29 +337,34 @@
     }
 
     function findGodMove() {
-        // Мгновенная проверка на победу или блок
+        // ПРИОРИТЕТ 1: Можем ли мы выиграть прямо сейчас?
+        // Проверяем для текущего игрока (кто сейчас ходит)
         for(let i=0; i<session.board.length; i++) {
             if(!session.board[i]) {
-                let b = [...session.board]; b[i] = session.botSide;
-                if(checkWin(b, session.botSide)) return i;
-            }
-        }
-        for(let i=0; i<session.board.length; i++) {
-            if(!session.board[i]) {
-                let b = [...session.board]; b[i] = settings.playerSide;
-                if(checkWin(b, settings.playerSide)) return i;
+                let b = [...session.board]; b[i] = session.turn; 
+                if(checkWin(b, session.turn)) return i;
             }
         }
 
+        // ПРИОРИТЕТ 2: Может ли противник выиграть следующим ходом? Блокируем.
+        let opponent = session.turn === 'X' ? 'O' : 'X';
+        for(let i=0; i<session.board.length; i++) {
+            if(!session.board[i]) {
+                let b = [...session.board]; b[i] = opponent;
+                if(checkWin(b, opponent)) return i;
+            }
+        }
+
+        // Если поле 3x3 — включаем идеальный просчет
         if (settings.size === 3) return minimax(session.board, 0, true, -Infinity, Infinity).index;
         
-        // PRO ЛОГИКА (ВЕСА) для больших полей
+        // PRO ЛОГИКА (ВЕСА) для 4x4 и 5x5
         if (settings.pro) {
             let weights = Array(session.board.length).fill(0);
             session.winLines.forEach(line => {
                 let countBot = line.filter(idx => session.board[idx] === session.botSide).length;
                 let countPlayer = line.filter(idx => session.board[idx] === settings.playerSide).length;
-                if (countBot > 0 && countPlayer > 0) return; // линия заблокирована
+                if (countBot > 0 && countPlayer > 0) return; 
                 line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + countBot + countPlayer); });
             });
             let maxWeight = -1, bestMoves = [];
@@ -371,6 +376,7 @@
             return bestMoves[Math.floor(Math.random() * bestMoves.length)];
         }
 
+        // Обычная логика (если PRO выкл) - центр
         const center = Math.floor(session.board.length / 2);
         if (!session.board[center]) return center;
         return randomEmpty();
@@ -419,8 +425,11 @@
     }
 
     function getHint() {
-        if (!session.active || session.turn !== settings.playerSide) return;
+        if (!session.active) return;
+        
+        // Подсказка теперь всегда использует самую сильную логику
         const idx = findGodMove();
+        
         const cell = document.getElementById('board').children[idx];
         cell.classList.add('hint');
         setTimeout(() => cell.classList.remove('hint'), 800);
