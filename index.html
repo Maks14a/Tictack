@@ -40,6 +40,14 @@
             gap: 12px;
         }
 
+        .header-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            position: relative;
+        }
+
         h1 {
             text-align: center;
             color: var(--primary);
@@ -48,6 +56,14 @@
             text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
             font-weight: 900;
         }
+
+        .edit-tool {
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: 0.3s;
+        }
+        .edit-tool:hover { opacity: 1; transform: scale(1.1); }
 
         .status-bar {
             background: rgba(255,255,255,0.05);
@@ -62,7 +78,6 @@
             min-height: 45px;
         }
 
-        /* НАСТРОЙКИ */
         .settings-container {
             background: var(--panel);
             border-radius: 20px;
@@ -75,10 +90,8 @@
         }
 
         .settings-container.hidden { display: none; }
-
         .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .row-label { font-size: 0.7rem; color: #94a3b8; font-weight: 900; text-transform: uppercase; width: 75px; }
-
         .group { display: flex; flex: 1; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 10px; }
         .opt-btn {
             flex: 1; padding: 10px 0; border: none; background: transparent;
@@ -88,7 +101,6 @@
         .opt-btn.active { background: var(--primary); color: #020617; }
         .opt-btn:disabled { opacity: 0.1; cursor: not-allowed; }
 
-        /* СЕТКА */
         .board-frame {
             width: 100%;
             aspect-ratio: 1 / 1;
@@ -99,53 +111,47 @@
             display: grid;
             width: 100%;
             height: 100%;
-            gap: 10px;
+            gap: 6px;
             grid-template-columns: repeat(var(--cols, 3), 1fr);
             grid-template-rows: repeat(var(--cols, 3), 1fr);
         }
 
         .cell {
             background: #0f172a;
-            border-radius: 14px;
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; aspect-ratio: 1 / 1;
             border: 1px solid rgba(255,255,255,0.05);
             transition: 0.15s;
-            position: relative;
         }
 
         .cell:active { transform: scale(0.92); }
         .cell span { font-size: var(--fs, 3rem); font-weight: 900; }
         .cell.x span { color: var(--accent-x); text-shadow: 0 0 15px var(--accent-x); }
         .cell.o span { color: var(--accent-o); text-shadow: 0 0 15px var(--accent-o); }
-
         .cell.winner { background: var(--primary); box-shadow: 0 0 20px var(--primary); }
         .cell.winner span { color: #020617; text-shadow: none; }
-        
         .cell.hint { background: rgba(251, 191, 36, 0.2); border: 2px solid #fbbf24; }
 
-        /* КНОПКИ УПРАВЛЕНИЯ */
         .footer-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        
         .btn {
             padding: 15px 5px; border: none; border-radius: 14px;
             font-weight: 900; cursor: pointer; text-transform: uppercase;
             font-size: 0.8rem; transition: 0.2s;
         }
-
-        .btn-play { background: var(--primary); color: #020617; grid-column: span 1; }
+        .btn-play { background: var(--primary); color: #020617; }
         .btn-side { background: #334155; color: white; }
         .btn-hint { background: #475569; color: #fbbf24; }
-
-        .btn:active { transform: translateY(2px); }
         .locked { pointer-events: none; }
-
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-    <h1>NEON TACTICS</h1>
+    <div class="header-box">
+        <h1>NEON TACTICS</h1>
+        <div class="edit-tool" onclick="customSettings()">✏️</div>
+    </div>
 
     <div class="status-bar" id="status">ГОТОВ К ТРУДУ</div>
 
@@ -212,6 +218,21 @@
     let settings = { size: 3, win: 3, diff: 'god', pro: false, playerSide: 'X', start: 'p' };
     let session = { board: [], active: false, turn: 'X', botSide: 'O', winLines: [] };
 
+    function customSettings() {
+        let n = prompt("Введите размер поля (N):", settings.size);
+        if(!n) return;
+        let w = prompt("Сколько в ряд для победы?", settings.win);
+        if(!w) return;
+        
+        settings.size = parseInt(n);
+        settings.win = parseInt(w);
+        
+        // Снимаем активность с кнопок стандартных размеров
+        document.querySelectorAll('#set-size .opt-btn, #set-win .opt-btn').forEach(b => b.classList.remove('active'));
+        drawEmpty();
+        setStatus(`РЕЖИМ: ${n}x${n} (ПОБЕДА: ${w})`);
+    }
+
     function config(key, val, el) {
         settings[key] = val;
         [...el.parentElement.children].forEach(b => b.classList.remove('active'));
@@ -221,18 +242,13 @@
             const winBtns = document.getElementById('set-win').children;
             [...winBtns].forEach(b => {
                 const v = parseInt(b.dataset.v);
-                if (v > settings.size) {
-                    b.disabled = true;
-                    b.classList.remove('active');
-                } else {
-                    b.disabled = false;
-                    if (settings.win === v) b.classList.add('active');
+                b.disabled = v > settings.size;
+                if (v === settings.size && settings.win > settings.size) {
+                    settings.win = v;
+                    [...winBtns].forEach(x => x.classList.remove('active'));
+                    b.classList.add('active');
                 }
             });
-            if (settings.win > settings.size) {
-                settings.win = settings.size;
-                [...winBtns].find(b => parseInt(b.dataset.v) === settings.size).classList.add('active');
-            }
             drawEmpty();
         }
     }
@@ -243,8 +259,14 @@
         const b = document.getElementById('board');
         b.innerHTML = '';
         b.style.setProperty('--cols', settings.size);
-        const fs = settings.size === 3 ? '3.5rem' : settings.size === 4 ? '2.5rem' : '1.8rem';
-        b.style.setProperty('--fs', fs);
+        
+        // Умный расчет шрифта: чем больше поле, тем меньше символы
+        let fontSize = 3.5;
+        if (settings.size > 3) fontSize = 2.5;
+        if (settings.size > 5) fontSize = 1.5;
+        if (settings.size > 8) fontSize = 1;
+        
+        b.style.setProperty('--fs', fontSize + 'rem');
         for(let i=0; i<settings.size*settings.size; i++) {
             const c = document.createElement('div');
             c.className = 'cell';
@@ -267,11 +289,11 @@
     function checkTurn() {
         if (!session.active) return;
         if (session.turn === session.botSide) {
-            setStatus("БОТ ДУМАЕТ (" + session.botSide + ")...");
+            setStatus("БОТ ДУМАЕТ...");
             document.getElementById('board').classList.add('locked');
             setTimeout(botMove, 600);
         } else {
-            setStatus("ТВОЙ ХОД (" + settings.playerSide + ")");
+            setStatus("ТВОЙ ХОД (" + session.turn + ")");
             document.getElementById('board').classList.remove('locked');
         }
     }
@@ -283,15 +305,9 @@
             const c = document.createElement('div');
             c.className = 'cell' + (val ? ' ' + val.toLowerCase() : '');
             c.innerHTML = `<span>${val || ''}</span>`;
-            c.onclick = () => playerMove(i);
+            c.onclick = () => { if(session.active && !session.board[i]) doMove(i, session.turn); };
             b.appendChild(c);
         });
-    }
-
-    function playerMove(i) {
-        if (!session.active || session.board[i]) return;
-        doMove(i, settings.playerSide);
-        if (session.active) checkTurn();
     }
 
     function doMove(i, sym) {
@@ -301,7 +317,7 @@
         if (win) {
             session.active = false;
             win.forEach(idx => document.getElementById('board').children[idx].classList.add('winner'));
-            setStatus(sym === settings.playerSide ? "ТЫ ПОБЕДИЛ!" : "БОТ ВЫИГРАЛ");
+            setStatus(sym === settings.playerSide ? "ПОБЕДА!" : "БОТ ВЫИГРАЛ");
             return;
         }
         if (!session.board.includes(null)) {
@@ -309,74 +325,68 @@
             setStatus("НИЧЬЯ");
             return;
         }
-        session.turn = session.turn === 'X' ? 'O' : 'X';
+        session.turn = (session.turn === 'X') ? 'O' : 'X';
+        checkTurn();
     }
 
     function botMove() {
         if (!session.active) return;
         let idx = (settings.diff === 'god') ? findGodMove() : findBestLogic();
         if (settings.diff === 'easy' && Math.random() < 0.7) idx = randomEmpty();
-        doMove(idx, session.botSide);
-        checkTurn();
+        doMove(idx, session.turn);
     }
 
     function findBestLogic() {
         for(let i=0; i<session.board.length; i++) {
             if(!session.board[i]) {
-                let b = [...session.board]; b[i] = session.botSide;
-                if(checkWin(b, session.botSide)) return i;
+                let b = [...session.board]; b[i] = session.turn;
+                if(checkWin(b, session.turn)) return i;
             }
         }
+        let opp = (session.turn === 'X') ? 'O' : 'X';
         for(let i=0; i<session.board.length; i++) {
             if(!session.board[i]) {
-                let b = [...session.board]; b[i] = settings.playerSide;
-                if(checkWin(b, settings.playerSide)) return i;
+                let b = [...session.board]; b[i] = opp;
+                if(checkWin(b, opp)) return i;
             }
         }
         return randomEmpty();
     }
 
     function findGodMove() {
-        // ПРИОРИТЕТ 1: Можем ли мы выиграть прямо сейчас?
-        // Проверяем для текущего игрока (кто сейчас ходит)
         for(let i=0; i<session.board.length; i++) {
             if(!session.board[i]) {
-                let b = [...session.board]; b[i] = session.turn; 
+                let b = [...session.board]; b[i] = session.turn;
                 if(checkWin(b, session.turn)) return i;
             }
         }
-
-        // ПРИОРИТЕТ 2: Может ли противник выиграть следующим ходом? Блокируем.
-        let opponent = session.turn === 'X' ? 'O' : 'X';
+        let opp = (session.turn === 'X') ? 'O' : 'X';
         for(let i=0; i<session.board.length; i++) {
             if(!session.board[i]) {
-                let b = [...session.board]; b[i] = opponent;
-                if(checkWin(b, opponent)) return i;
+                let b = [...session.board]; b[i] = opp;
+                if(checkWin(b, opp)) return i;
             }
         }
 
-        // Если поле 3x3 — включаем идеальный просчет
         if (settings.size === 3) return minimax(session.board, 0, true, -Infinity, Infinity).index;
         
-        // PRO ЛОГИКА (ВЕСА) для 4x4 и 5x5
-        if (settings.pro) {
+        if (settings.pro || settings.size > 3) {
             let weights = Array(session.board.length).fill(0);
             session.winLines.forEach(line => {
-                let countBot = line.filter(idx => session.board[idx] === session.botSide).length;
-                let countPlayer = line.filter(idx => session.board[idx] === settings.playerSide).length;
-                if (countBot > 0 && countPlayer > 0) return; 
-                line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + countBot + countPlayer); });
+                let me = line.filter(idx => session.board[idx] === session.turn).length;
+                let op = line.filter(idx => session.board[idx] === opp).length;
+                if (me > 0 && op > 0) return;
+                line.forEach(idx => { if (!session.board[idx]) weights[idx] += (1 + me + op * 1.1); });
             });
-            let maxWeight = -1, bestMoves = [];
+            let maxW = -1, best = [];
             weights.forEach((w, i) => {
                 if (session.board[i]) return;
-                if (w > maxWeight) { maxWeight = w; bestMoves = [i]; }
-                else if (w === maxWeight) bestMoves.push(i);
+                if (w > maxW) { maxW = w; best = [i]; }
+                else if (w === maxW) best.push(i);
             });
-            return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+            return best.length ? best[Math.floor(Math.random() * best.length)] : randomEmpty();
         }
 
-        // Обычная логика (если PRO выкл) - центр
         const center = Math.floor(session.board.length / 2);
         if (!session.board[center]) return center;
         return randomEmpty();
@@ -384,52 +394,39 @@
 
     function minimax(board, depth, isMax, alpha, beta) {
         const avail = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-        if (checkWin(board, settings.playerSide)) return { score: -10 + depth };
-        if (checkWin(board, session.botSide)) return { score: 10 - depth };
+        const botS = session.turn;
+        const plS = (botS === 'X') ? 'O' : 'X';
+        if (checkWin(board, plS)) return { score: -10 + depth };
+        if (checkWin(board, botS)) return { score: 10 - depth };
         if (avail.length === 0) return { score: 0 };
-
         let moves = [];
         for (let i = 0; i < avail.length; i++) {
             let move = { index: avail[i] };
-            board[avail[i]] = isMax ? session.botSide : settings.playerSide;
+            board[avail[i]] = isMax ? botS : plS;
             let res = minimax(board, depth + 1, !isMax, alpha, beta);
-            move.score = res.score;
-            board[avail[i]] = null;
+            move.score = res.score; board[avail[i]] = null;
             moves.push(move);
-            if (isMax) {
-                alpha = Math.max(alpha, move.score);
-                if (beta <= alpha) break;
-            } else {
-                beta = Math.min(beta, move.score);
-                if (beta <= alpha) break;
-            }
+            if (isMax) { alpha = Math.max(alpha, move.score); if (beta <= alpha) break; }
+            else { beta = Math.min(beta, move.score); if (beta <= alpha) break; }
         }
-        let best;
+        let bestIdx = 0;
         if (isMax) {
-            let bestScore = -Infinity;
-            for (let i = 0; i < moves.length; i++) {
-                if (moves[i].score > bestScore) { bestScore = moves[i].score; best = i; }
-            }
+            let bs = -Infinity; for (let i=0; i<moves.length; i++) { if(moves[i].score > bs) { bs=moves[i].score; bestIdx=i; } }
         } else {
-            let bestScore = Infinity;
-            for (let i = 0; i < moves.length; i++) {
-                if (moves[i].score < bestScore) { bestScore = moves[i].score; best = i; }
-            }
+            let bs = Infinity; for (let i=0; i<moves.length; i++) { if(moves[i].score < bs) { bs=moves[i].score; bestIdx=i; } }
         }
-        return moves[best];
+        return moves[bestIdx];
     }
 
     function randomEmpty() {
         const empty = session.board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-        return empty[Math.floor(Math.random() * empty.length)];
+        return empty.length ? empty[Math.floor(Math.random() * empty.length)] : null;
     }
 
     function getHint() {
         if (!session.active) return;
-        
-        // Подсказка теперь всегда использует самую сильную логику
         const idx = findGodMove();
-        
+        if(idx === null) return;
         const cell = document.getElementById('board').children[idx];
         cell.classList.add('hint');
         setTimeout(() => cell.classList.remove('hint'), 800);
@@ -451,10 +448,12 @@
         }
         for (let r = 0; r <= s - w; r++) {
             for (let c = 0; c <= s - w; c++) {
-                let l1 = []; for (let k = 0; k < w; k++) l1.push((r + k) * s + (c + k));
-                lines.push(l1);
-                let l2 = []; for (let k = 0; k < w; k++) l2.push((r + k) * s + (c + w - 1 - k));
-                lines.push(l2);
+                let l1 = [], l2 = []; 
+                for (let k = 0; k < w; k++) {
+                    l1.push((r + k) * s + (c + k));
+                    l2.push((r + k) * s + (c + w - 1 - k));
+                }
+                lines.push(l1); lines.push(l2);
             }
         }
         return lines;
@@ -468,8 +467,8 @@
     }
 
     function setStatus(t) { document.getElementById('status').innerText = t; }
-
     drawEmpty();
 </script>
 </body>
 </html>
+
